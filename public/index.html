@@ -32,7 +32,7 @@
           <li class="tab col s6">
             <a class="active purple-text text-darken-2" href="#prog-content">Programmes</a>
           </li>
-          <li class="tab col s6"><a class="purple-text text-darken-2" href="#test-swipe-2">Modules</a></li>
+          <li class="tab col s6"><a class="purple-text text-darken-2" href="#module-content">Modules</a></li>
         </ul>
       </div>
     </div>
@@ -65,20 +65,16 @@
             <div class="row">
               <div class="col s12 dropdown-container">
                 <div class="input-field col s12 m6">
-                  <select class="select cohort-drop left-align" id="cohort">
-                    <option value="" disabled selected>
-                      Choose your option
-                    </option>
+                  <select id="cohort">
+                    <option value="" disabled selected>Choose your option</option>
                     <option value="cohort">Cohort Spec</option>
                     <option value="term">Academic Year Spec</option>
                   </select>
                   <label>Cohort or Academic Year Spec</label>
                 </div>
                 <div class="input-field col s12 m6">
-                  <select class="icons year-drop" id="year">
-                    <option value="" disabled selected>
-                      Choose your option
-                    </option>
+                  <select id="year">
+                    <option value="" disabled selected>Choose your option</option>
                     <option value="2020">2020/21</option>
                     <option value="2021">2021/22</option>
                   </select>
@@ -94,6 +90,10 @@
                   ><i class="material-icons right">file_download</i>Generate
                   Spec</a
                 >
+                <div class="loading hide">
+                  <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                  <p class="loading-text purple-text text-darken-2">Generating spec</p>
+                </div>
               </div>
             </div>            
           </div>
@@ -101,7 +101,63 @@
       </div>
       <div class="col s1 m2 l3"></div>
     </div>
-    <div id="test-swipe-2" class="col s12 grey lighten-3">Test 2</div>
+
+
+    <div id="module-content" class="row">      
+      <div class="col s1 m2 l3"></div>
+      <div class="z-depth-4 form-card blue-grey lighten-5 col s10 m8 l6">
+        <div class="row header">
+          <div class="col s12">
+            <h4>
+              Module Spec Generator
+            </h4>
+
+          </div>
+        </div>
+        <div class="row autocomplete-container">
+          <div class="col s12 form-content">
+            <div class="row input-container">
+              <div class="input-field col s11 m9">
+                <i class="material-icons prefix">search</i>
+                <input
+                  type="text"
+                  id="autocomplete-input"
+                  class="autocomplete"
+                />
+                <label for="autocomplete-input"
+                  >Enter module code</label
+                >
+              </div>
+            </div>
+            <div class="row module-year-container">
+              <div class="input-field col s11 m9">
+                <select>
+                  <option value="" disabled selected>Choose your option</option>
+                  <option value="2020">2020/21</option>
+                  <option value="2021">2021/22</option>                  
+                </select>
+                <label>Academic Year</label>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col s12 btn-col">
+                <a
+                  class="waves-effect waves-light btn deep-purple darken-2"
+                  id="generate-btn"
+                  ><i class="material-icons right">file_download</i>Generate
+                  Spec</a
+                >
+                <div class="loading hide">
+                  <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                  <p class="loading-text purple-text text-darken-2">Generating spec</p>
+                </div>
+              </div>
+            </div>            
+          </div>
+        </div>
+      </div>
+      <div class="col s1 m2 l3"></div>
+    </div>
   </body>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.19.7/docxtemplater.js"></script>
