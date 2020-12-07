@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { programmeData } = require('../controllers/programmes');
+const { programmeData, autocompleteData } = require('../controllers/programmes');
 
-router.get('/data', programmeData);
+router.get('/data/:progCode/:cohort/:year', programmeData);
+router.get('/autocomplete-data', autocompleteData)
 
 module.exports = router;

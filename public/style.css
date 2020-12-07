@@ -1,0 +1,68 @@
+body {
+  background-color: #605270 !important;
+    background-image: url(https://intranet.birmingham.ac.uk/Images/brand-resources/somes-sunset-hero-min.jpg);
+    background-size: 100%;
+    background-repeat: no-repeat;
+}
+
+.tab-row {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+#prog-content {  
+  display: flex;
+  justify-content: center;      
+}
+
+.form-card {
+  /* margin-left: 0 !important; */
+  /* margin-right: auto !important; */
+  margin-top: 40px;  
+  /* height: 80%; */
+  /* display: flex;
+  justify-content: center;   */
+  border-radius: 10%;
+  opacity: 0.95;
+  overflow: auto;
+}
+
+
+.input-container {
+  display: flex;
+  justify-content: center;
+}
+
+.input-field {
+  margin-left: 0 !important;
+}
+
+.dropdown-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-col {
+  display: flex;
+  justify-content: center;
+}
+
+.select-wrapper input.select-dropdown {
+  text-align: left;
+}
+
+.header {
+  text-align: center;
+  background-color: #3A3B87;
+  color: #FFF;
+}
+
+@media only screen and (min-width: 768px) {
+  .dropdown-container {
+    display: flex;
+    flex-direction: row;    
+  }
+}
+
+

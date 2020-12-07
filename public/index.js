@@ -1,13 +1,48 @@
 document.getElementById("generate-btn").addEventListener("click", generate);
+const input = document.getElementById("autocomplete-input");
+// const cohort2 = $('.cohort-drop option:selected')
+// const cohort = document.querySelector('.cohort-drop');
+// const instance1 = M.FormSelect.getInstance(cohort);
+// const cohort2 = instance1.getSelectedValues();
+M.AutoInit();
+var elems = document.getElementById('cohort');
+var drop = M.FormSelect.init(elems);
+let cohort = '';
+let year = '';
+    $('#cohort').on('change', function() {
+      cohort = $(this).val();
+    });
+    $('#year').on('change', function() {      
+      year = $(this).val();
+    });
+
+const tabs = document.querySelector('.tabs');
+var instance = M.Tabs.init(tabs);
+
+document.addEventListener('DOMContentLoaded', function() {
+  
+});
+
+
+
+window.addEventListener('load', async () => {
+  const { data } = await axios.get('/autocomplete-data');
+  $('input.autocomplete').autocomplete({
+    data: {...data},
+  });
+});
 
   function loadFile(url,callback){
       PizZipUtils.getBinaryContent(url,callback);
   }
   async function generate() {
-      try {
-        const { data } = await axios.get('/data');
-
-        loadFile("/spec.docx",function(error,content){
+    console.log(cohort);
+    console.log(year);
+    let docPath = `/spec${cohort}${year}.docx`;       
+    const progCode = input.value.substr(0,4);    
+    try {
+        const { data } = await axios.get(`/data/${progCode}/${cohort}/${year}`);        
+        loadFile(docPath, function(error,content){
             if (error) { throw error };
   
             // The error object contains additional information when logged with JSON.stringify (it contains a properties object containing all suberrors).
@@ -38,7 +73,11 @@ document.getElementById("generate-btn").addEventListener("click", generate);
             var zip = new PizZip(content);
             var doc;
             try {
-                doc=new window.docxtemplater(zip);
+                doc=new window.docxtemplater(zip, {
+                  nullGetter() {
+                    return "";
+                  },
+                });
             } catch(error) {
                 // Catch compilation errors (errors caused by the compilation of the template : misplaced tags)
                 errorHandler(error);
@@ -93,7 +132,7 @@ document.getElementById("generate-btn").addEventListener("click", generate);
                 type:"blob",
                 mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             }) //Output the document using Data-URI
-            saveAs(out,"output.docx")
+            saveAs(out,`${data.progCode}.docx`)
         })
       } catch (err) {
         console.error('ERROR - index.js - generate', err);

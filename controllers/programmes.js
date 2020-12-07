@@ -1,26 +1,14 @@
-// const { toJson } = require('../services/readFile');
-
-// module.exports = {
-//   programmeData: async (req, res, next) => {
-//     try {
-//       const results = toJson();
-//       console.log(results);
-//       res.status(200).json(results);
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
-// }
-
-const path = require('path')
-const filePathSpec = path.join(__dirname, "progspec.csv");
-const filePathReqs = path.join(__dirname, "progreqs.xlsx");
-const filePathOutcomes = path.join(__dirname, "outcomes.xlsx");
-const fs = require('fs');
+const path = require("path");
+let filePathSpec = path.join(__dirname, `progspec2020.csv`);
+let filePathReqs;
+let filePathOutcomes;
+const fs = require("fs");
 const csv = require("csvtojson");
 if (typeof require !== "undefined") XLSX = require("xlsx");
 const striptags = require("striptags");
-let selectedProg = "001D";
+let selectedProg = "";
+let selectedCohort = "";
+let selectedYear = "";
 
 let year1Exists = false;
 let year2Exists = false;
@@ -113,6 +101,18 @@ let newProg = {
 // Function to generate spec
 const programmeData = async (req, res, next) => {
   // Spec
+  selectedProg = req.params.progCode;
+  selectedCohort = req.params.cohort;
+  selectedYear = req.params.year; 
+
+  filePathSpec = path.join(__dirname, `progspec${selectedYear}.csv`);
+
+  selectedCohort = "cohort"
+    ? (filePathReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`))
+    : (filePathReqs = path.join(__dirname, `progreqsterm${selectedYear}.xlsx`));
+  
+  filePathOutcomes = path.join(__dirname, `outcomes${selectedYear}.xlsx`);
+
   const specArray = await csv().fromFile(filePathSpec);
   const filteredSpecArray = specArray.filter(
     (prog) => prog["Prog Code"] == selectedProg
@@ -476,7 +476,7 @@ const programmeData = async (req, res, next) => {
       default:
         break;
     }
-  });  
+  });
 
   // Learning Outcomes
 
@@ -524,7 +524,6 @@ const programmeData = async (req, res, next) => {
     }
   });
 
-  
   if (
     newProg.years.year1.rules.compulsory.length > 0 ||
     newProg.years.year1.rules.optional.length > 0
@@ -564,15 +563,195 @@ const programmeData = async (req, res, next) => {
     newProg.collaboration = true;
     newProg.noCollab = false;
   }
-  
+
   if (!newProg.dept2 === "") {
     newProg.partner = true;
     newProg.noPartner = false;
   }
 
-  res.status(200).json(newProg)
+  res.status(200).json(newProg);
+};
+
+let initialData = {};
+const autocompleteData = async (req, res, next) => {
+  const initialSpecArray = await csv().fromFile(filePathSpec);
+  const filteredInitialData = initialSpecArray.filter((el) => {
+    if (el["Degree Long Desc"] === "Postgraduate Affiliate") {
+      return false;
+    }
+    if (el["Degree Long Desc"] == "Undergraduate Affiliate") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Undergraduate Affiliate") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "DA wrapper") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Certificate") {
+      return false;
+    }
+    if (
+      el["Degree Long Desc"] ===
+      "Common European Framework of Reference for Languages B2"
+    ) {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Diploma") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Doctor of Science") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Master of Philosophy") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Doctor of Philosophy") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Visiting Research Student") {
+      return false;
+    }
+
+    if (el["Degree Long Desc"].includes("AQ")) {
+      return false;
+    }
+    return true;
+
+    // el["Degree Long Desc"] !== 'Postgraduate Affiliate' ||
+    // el["Degree Long Desc"] !== 'Undergraduate Affiliate' ||
+    // el["Degree Long Desc"] !== 'DA wrapper' ||
+    // el["Degree Long Desc"] !== 'Certificate' ||
+    // el["Degree Long Desc"] !== 'Common European Framework of Reference for Languages B2' ||
+    // el["Degree Long Desc"] !== 'Diploma' ||
+    // el["Degree Long Desc"] !== 'Doctor of Science' ||
+    // el["Degree Long Desc"] !== 'Master of Philosophy' ||
+    // el["Degree Long Desc"] !== 'Doctor of Philosophy' ||
+    // el["Degree Long Desc"] !== 'Visiting Research Student' ||
+    // !el["Degree Long Desc"].includes('AQ')
+  });
+  filteredInitialData.forEach((prog) => {
+    if (
+      prog["Prog Mode Desc"] === "Full-time according to funding coun" ||
+      prog["Prog Mode Desc"] === "Other full-time"
+    ) {
+      prog["Prog Mode Desc"] = "FT";
+    } else if (prog["Prog Mode Desc"] === "Part-time") {
+      prog["Prog Mode Desc"] = "PT";
+    }
+    switch (prog["Degree Long Desc"]) {
+      case "Postgraduate Certificate in Education":
+        prog["Degree Long Desc"] = "PGCE";
+        break;
+      case "Postgraduate Certificate":
+        prog["Degree Long Desc"] = "PGCert";
+        break;
+      case "Doctor of Philosophy":
+        prog["Degree Long Desc"] = "PhD";
+        break;
+      case "Doctor of Medicine":
+        prog["Degree Long Desc"] = "MD";
+        break;
+      case "Bachelor of Arts":
+        prog["Degree Long Desc"] = "BA";
+        break;
+      case "Certificate of Higher Education":
+        prog["Degree Long Desc"] = "CertHE";
+        break;
+      case "Master in Science":
+        prog["Degree Long Desc"] = "MSci";
+        break;
+      case "Bachelor of Science":
+        prog["Degree Long Desc"] = "BSc";
+        break;
+      case "Visiting Research Student":
+        prog["Degree Long Desc"] = "PG VRS";
+        break;
+      case "Master of Arts":
+        prog["Degree Long Desc"] = "MA";
+        break;
+      case "Master of Science":
+        prog["Degree Long Desc"] = "MSc";
+        break;
+      case "Master of Philosophy":
+        prog["Degree Long Desc"] = "MPhil";
+        break;
+      case "Postgraduate Diploma":
+        prog["Degree Long Desc"] = "PGDip";
+        break;
+      case "Master of Engineering":
+        prog["Degree Long Desc"] = "MEng";
+        break;
+      case "Master of Laws":
+        prog["Degree Long Desc"] = "LLM";
+        break;
+      case "Subject Knowledge Enhancement":
+        prog["Degree Long Desc"] = "SKE";
+        break;
+      case "Advanced Certificate":
+        prog["Degree Long Desc"] = "AdCert";
+        break;
+      case "Doctor of Philosophy with Integrated Study":
+        prog["Degree Long Desc"] = "PhD with Integrated Study";
+        break;
+      case "Doctor of Clinical Psychology":
+        prog["Degree Long Desc"] = "ClinPsyD";
+        break;
+      case "Doctorate in Forensic Psychology Practice":
+        prog["Degree Long Desc"] = "ForenPsyD";
+        break;
+      case "Bachelor of Medicine and Bachelor of Surgery":
+        prog["Degree Long Desc"] = "MBChB";
+        break;
+      case "Master of Education":
+        prog["Degree Long Desc"] = "MEd";
+        break;
+      case "Master of Research":
+        prog["Degree Long Desc"] = "MRes";
+        break;
+      case "Bachelor of Laws":
+        prog["Degree Long Desc"] = "LLB";
+        break;
+      case "Master of Public Administration":
+        prog["Degree Long Desc"] = "MPA";
+        break;
+      case "Graduate Certificate":
+        prog["Degree Long Desc"] = "GCert";
+        break;
+      case "Undergraduate Certificate":
+        prog["Degree Long Desc"] = "UGCert";
+        break;
+      case "Undergraduate Diploma":
+        prog["Degree Long Desc"] = "UGDip";
+        break;
+      case "Bachelor of Philosophy":
+        prog["Degree Long Desc"] = "BPhil";
+        break;
+      case "Bachelor of Engineering":
+        prog["Degree Long Desc"] = "BEng";
+        break;
+      case "Doctorate in Sport and Exercise Sciences":
+        prog["Degree Long Desc"] = "DSportExSc";
+        break;
+      case "Bachelor of Medical Science":
+        prog["Degree Long Desc"] = "BMedSc";
+        break;
+      case "Forensic Clinical Psychology Doctorate":
+        prog["Degree Long Desc"] = "ForenClinPsyD";
+        break;
+      default:
+        break;
+    }
+    const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
+    initialData = {
+      ...initialData,
+      [progInfo]: null,
+    };
+  });
+  res.status(200).json(initialData);
 };
 
 module.exports = {
   programmeData,
-}
+  autocompleteData,
+};

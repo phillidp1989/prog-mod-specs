@@ -5,8 +5,35 @@ const apiRoutes = require('./routes/api');
 const PORT = process.env.PORT || 8080;
 const app = express();
 
-app.get('/download-spec', (req, res) => {
-  const docPath = path.join(__dirname, '/public', 'spec.docx');
+app.get('/download-spec/term/2020', (req, res) => {
+  const docPath = path.join(__dirname, '/public', 'specterm2020.docx');
+  res.download(docPath, 'spec.docx', function(err) {
+    if (err) {
+      throw err;
+    }
+  })
+})
+
+app.get('/download-spec/term/2021', (req, res) => {
+  const docPath = path.join(__dirname, '/public', 'specterm2021.docx');
+  res.download(docPath, 'spec.docx', function(err) {
+    if (err) {
+      throw err;
+    }
+  })
+})
+
+app.get('/download-spec/cohort/2020', (req, res) => {
+  const docPath = path.join(__dirname, '/public', 'speccohort2020.docx');
+  res.download(docPath, 'spec.docx', function(err) {
+    if (err) {
+      throw err;
+    }
+  })
+})
+
+app.get('/download-spec/cohort/2021', (req, res) => {
+  const docPath = path.join(__dirname, '/public', 'speccohort2021.docx');
   res.download(docPath, 'spec.docx', function(err) {
     if (err) {
       throw err;
