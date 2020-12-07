@@ -1,9 +1,5 @@
 document.getElementById("generate-btn").addEventListener("click", generate);
 const input = document.getElementById("autocomplete-input");
-// const cohort2 = $('.cohort-drop option:selected')
-// const cohort = document.querySelector('.cohort-drop');
-// const instance1 = M.FormSelect.getInstance(cohort);
-// const cohort2 = instance1.getSelectedValues();
 M.AutoInit();
 var elems = document.getElementById('cohort');
 var drop = M.FormSelect.init(elems);
