@@ -21,7 +21,7 @@ let year = "";
 // Populate autocomplete
 window.addEventListener("load", async () => {
   const { data } = await axios.get("/autocomplete-data");
-  $("input.autocomplete").autocomplete({
+  $("input#autocomplete-input").autocomplete({
     data: { ...data },
   });
 });
