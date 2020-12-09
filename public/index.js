@@ -24,6 +24,8 @@ window.addEventListener("load", async () => {
   $("input#autocomplete-input").autocomplete({
     data: { ...data },
   });
+  $('.prog-initializer').addClass('hide');
+  $('.form-content').removeClass('hide');
 });
 
 function loadFile(url, callback) {
