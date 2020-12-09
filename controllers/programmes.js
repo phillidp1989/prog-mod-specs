@@ -38,17 +38,17 @@ let newProg = {
   deliveringInstitution2: "",
   deliveringInstitution3: "",
   regBody: "",
-  aims: "",
+  aims: [],
   benchmark: "",
   knowledge: {
     outcome: [],
-    learning: "",
-    assessment: "",
+    learning: [],
+    assessment: [],
   },
   skills: {
     outcome: [],
-    learning: "",
-    assessment: "",
+    learning: [],
+    assessment: [],
   },
   years: {
     year1: {
@@ -117,17 +117,17 @@ const programmeData = async (req, res, next) => {
     deliveringInstitution2: "",
     deliveringInstitution3: "",
     regBody: "",
-    aims: "",
+    aims: [],
     benchmark: "",
     knowledge: {
       outcome: [],
-      learning: "",
-      assessment: "",
+      learning: [],
+      assessment: [],
     },
     skills: {
       outcome: [],
-      learning: "",
-      assessment: "",
+      learning: [],
+      assessment: [],
     },
     years: {
       year1: {
@@ -179,14 +179,14 @@ const programmeData = async (req, res, next) => {
   // Spec
   selectedProg = req.params.progCode;
   selectedCohort = req.params.cohort;
-  selectedYear = req.params.year; 
+  selectedYear = req.params.year;
 
   filePathSpec = path.join(__dirname, `progspec${selectedYear}.csv`);
 
   selectedCohort = "cohort"
     ? (filePathReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`))
     : (filePathReqs = path.join(__dirname, `progreqsterm${selectedYear}.xlsx`));
-  
+
   filePathOutcomes = path.join(__dirname, `outcomes${selectedYear}.xlsx`);
 
   const specArray = await csv().fromFile(filePathSpec);
@@ -227,68 +227,54 @@ const programmeData = async (req, res, next) => {
   );
 
   filteredReqsArray.forEach((row) => {
+    const singleModule = {
+      moduleCode: row.Modulecode,
+      moduleTitle: row["Module Long Title"],
+      moduleCredits: row["Scbcrse Credit Hr Low"],
+      moduleLevel: row["Attr Level"],
+      moduleSemester: row["Stvptrm Desc"],
+    };
+
     newProg.progCode = row["Smbpgen Program"];
     switch (row["Progyear"] || row["Prog Year"]) {
       case "1":
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
             !newProg.years.year1.rules.compulsory.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year1.rules.compulsory.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year1.rules.compulsory.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year1.rules.compulsory[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year1.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
           }
         } else {
           if (
             !newProg.years.year1.rules.optional.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year1.rules.optional.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year1.rules.optional.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year1.rules.optional[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year1.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
           }
         }
         newProg.years.year1.yearText = striptags(row.Areagrouptext);
@@ -297,62 +283,40 @@ const programmeData = async (req, res, next) => {
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
             !newProg.years.year2.rules.compulsory.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year2.rules.compulsory.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year2.rules.compulsory.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year2.rules.compulsory[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year2.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
           }
         } else {
           if (
             !newProg.years.year2.rules.optional.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year2.rules.optional.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year2.rules.optional.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year2.rules.optional[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year2.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
           }
         }
         newProg.years.year2.yearText = striptags(row.Areagrouptext);
@@ -361,62 +325,40 @@ const programmeData = async (req, res, next) => {
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
             !newProg.years.year3.rules.compulsory.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year3.rules.compulsory.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year3.rules.compulsory.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year3.rules.compulsory[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year3.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
           }
         } else {
           if (
             !newProg.years.year3.rules.optional.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year3.rules.optional.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year3.rules.optional.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year3.rules.optional[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year3.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
           }
         }
         newProg.years.year3.yearText = striptags(row.Areagrouptext);
@@ -425,62 +367,40 @@ const programmeData = async (req, res, next) => {
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
             !newProg.years.year4.rules.compulsory.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year4.rules.compulsory.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year4.rules.compulsory.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year4.rules.compulsory[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year4.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
           }
         } else {
           if (
             !newProg.years.year4.rules.optional.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year4.rules.optional.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year4.rules.optional.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year4.rules.optional[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year4.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
           }
         }
         newProg.years.year4.yearText = striptags(row.Areagrouptext);
@@ -489,62 +409,40 @@ const programmeData = async (req, res, next) => {
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
             !newProg.years.year5.rules.compulsory.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year5.rules.compulsory.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year5.rules.compulsory.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year5.rules.compulsory[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year5.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
           }
         } else {
           if (
             !newProg.years.year5.rules.optional.some(
-              (el) => el.ruleText === row["Ruledesc OR Ruletext"]
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
             )
           ) {
             newProg.years.year5.rules.optional.push({
               ruleText: striptags(row["Ruledesc OR Ruletext"]),
-              module: [
-                {
-                  moduleCode: row.Modulecode,
-                  moduleTitle: row["Module Long Title"],
-                  moduleCredits: row["Scbcrse Credit Hr Low"],
-                  moduleLevel: row["Attr Level"],
-                  moduleSemester: row["Stvptrm Desc"],
-                },
-              ],
+              module: [singleModule],
             });
           } else {
             const moduleIndex = newProg.years.year5.rules.optional.findIndex(
-              (module) => module.ruleText === row["Ruledesc OR Ruletext"]
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
             );
-            newProg.years.year5.rules.optional[moduleIndex].module.push({
-              moduleCode: row.Modulecode,
-              moduleTitle: row["Module Long Title"],
-              moduleCredits: row["Scbcrse Credit Hr Low"],
-              moduleLevel: row["Attr Level"],
-              moduleSemester: row["Stvptrm Desc"],
-            });
+            newProg.years.year5.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
           }
         }
         newProg.years.year5.yearText = striptags(row.Areagrouptext);
@@ -566,9 +464,19 @@ const programmeData = async (req, res, next) => {
     (prog) => prog["Prog Code"] == selectedProg
   );
 
-  filteredOutcomesArray.forEach((outcome) => {
-    newProg.aims = striptags(outcome["Educational Aims"]);
+  const strippedAims = striptags(
+    filteredOutcomesArray[0]["Educational Aims"],
+    [],
+    "\n"
+  );
+  const aimsArr = strippedAims.split("\n");
+  aimsArr.forEach((el) => {
+    if (el !== "") {
+      newProg.aims.push(el.trim());
+    }
+  });
 
+  filteredOutcomesArray.forEach((outcome) => {
     if (!outcome["QAA Benchmark"] === newProg.benchmark) {
       newProg.benchmark = striptags(outcome["QAA Benchmark"]);
     }
@@ -577,22 +485,66 @@ const programmeData = async (req, res, next) => {
       case "K":
         newProg.knowledge.outcome.push(striptags(outcome["Outcome"]));
         if (outcome["Learning and Teaching"]) {
-          newProg.knowledge.learning =
-            outcome[striptags("Learning and Teaching")];
+          const strippedLT = striptags(
+            outcome["Learning and Teaching"],
+            [],
+            "\n"
+          );
+          const ltArr = strippedLT.split("\n");
+          ltArr.forEach((el) => {
+            if (el !== "") {
+              newProg.knowledge.learning.push(el.trim());
+            }
+          });
+          // newProg.knowledge.learning =
+          //   outcome[striptags("Learning and Teaching")];
         }
         if (outcome["Assessment Methods"]) {
-          newProg.knowledge.assessment = striptags(
-            outcome["Assessment Methods"]
+          const strippedAssess = striptags(
+            outcome["Assessment Methods"],
+            [],
+            "\n"
           );
+          const assessArr = strippedAssess.split("\n");
+          assessArr.forEach((el) => {
+            if (el !== "") {
+              newProg.knowledge.assessment.push(el.trim());
+            }
+          });
+          // newProg.knowledge.assessment = striptags(
+          //   outcome["Assessment Methods"]
+          // );
         }
         break;
       case "S":
         newProg.skills.outcome.push(striptags(outcome["Outcome"]));
         if (outcome["Learning and Teaching"]) {
-          newProg.skills.learning = striptags(outcome["Learning and Teaching"]);
+          const strippedSkillsLT = striptags(
+            outcome["Learning and Teaching"],
+            [],
+            "\n"
+          );
+          const skillsLTArr = strippedSkillsLT.split("\n");
+          skillsLTArr.forEach((el) => {
+            if (el !== "") {
+              newProg.skills.learning.push(el.trim());
+            }
+          });
+          // newProg.skills.learning = striptags(outcome["Learning and Teaching"]);
         }
         if (outcome["Assessment Methods"]) {
-          newProg.skills.assessment = striptags(outcome["Assessment Methods"]);
+          const strippedSkillsAssess = striptags(
+            outcome["Assessment Methods"],
+            [],
+            "\n"
+          );
+          const skillsAssessArr = strippedSkillsAssess.split("\n");
+          skillsAssessArr.forEach((el) => {
+            if (el !== "") {
+              newProg.skills.assessment.push(el.trim());
+            }
+          });
+          // newProg.skills.assessment = striptags(outcome["Assessment Methods"]);
         }
         break;
       default:
@@ -686,6 +638,9 @@ const autocompleteData = async (req, res, next) => {
       return false;
     }
     if (el["Degree Long Desc"] === "Visiting Research Student") {
+      return false;
+    }
+    if (el["Degree Code"] == "71") {
       return false;
     }
 
