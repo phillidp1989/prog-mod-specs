@@ -100,6 +100,82 @@ let newProg = {
 
 // Function to generate spec
 const programmeData = async (req, res, next) => {
+  newProg = {
+    progCode: "",
+    progTitle: "",
+    college: "",
+    school: "",
+    subject1: "",
+    subject2: "",
+    subject3: "",
+    dept1: "",
+    dept2: "",
+    mode: "",
+    campus: "",
+    length: "",
+    atas: "",
+    deliveringInstitution2: "",
+    deliveringInstitution3: "",
+    regBody: "",
+    aims: "",
+    benchmark: "",
+    knowledge: {
+      outcome: [],
+      learning: "",
+      assessment: "",
+    },
+    skills: {
+      outcome: [],
+      learning: "",
+      assessment: "",
+    },
+    years: {
+      year1: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
+      year2: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
+      year3: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
+      year4: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
+      year5: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
+    },
+    collaboration,
+    noCollab,
+    partner,
+    noPartner,
+    year1Exists,
+    year2Exists,
+    year3Exists,
+    year4Exists,
+    year5Exists,
+  };
   // Spec
   selectedProg = req.params.progCode;
   selectedCohort = req.params.cohort;
