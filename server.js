@@ -41,6 +41,15 @@ app.get('/download-spec/cohort/2021', (req, res) => {
   })
 })
 
+app.get('/download-module-spec', (req, res) => {
+  const docPath = path.join(__dirname, '/public', 'module-spec.docx');
+  res.download(docPath, 'spec.docx', function(err) {
+    if (err) {
+      throw err;
+    }
+  })
+})
+
 app.use(apiRoutes);
 app.use(express.static("public")); 
 
