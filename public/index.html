@@ -127,7 +127,11 @@
           </div>
         </div>
         <div class="row autocomplete-container">
-          <div class="col s12 form-content">
+          <div class="mod-initializer">
+            <div class="lds-dual-ring"></div>
+            <h5 class="purple-text text-darken-2">Loading modules</h5>
+          </div>
+          <div class="col s12 form-content hide">
             <div class="row input-container">
               <div class="input-field col s11 m9">
                 <i class="material-icons prefix">search</i>
@@ -141,7 +145,7 @@
             </div>
             <div class="row module-year-container">
               <div class="input-field col s11 m9">
-                <select>
+                <select id="mod-year">
                   <option value="" disabled selected>Choose your option</option>
                   <option value="2020">2020/21</option>
                   <option value="2021">2021/22</option>
@@ -153,11 +157,11 @@
               <div class="col s12 btn-col">
                 <a
                   class="waves-effect waves-light btn deep-purple darken-2"
-                  id="generate-btn"
+                  id="generate-btn-mod"
                   ><i class="material-icons right">file_download</i>Generate
                   Spec</a
                 >
-                <div class="loading hide">
+                <div class="mod-loading hide">
                   <div class="lds-roller">
                     <div></div>
                     <div></div>
