@@ -1,22 +1,30 @@
 M.AutoInit();
 
 const generateBtn = document.getElementById("generate-btn");
+const generateBtnMod = document.getElementById("generate-btn-mod");
 const input = document.getElementById("autocomplete-input");
+const moduleInput = document.getElementById("module-autocomplete-input");
 const elems = document.getElementById("cohort");
 const tabs = document.querySelector(".tabs");
 const instance = M.Tabs.init(tabs);
 const drop = M.FormSelect.init(elems);
 
 generateBtn.addEventListener("click", generate);
+generateBtnMod.addEventListener("click", generateMod);
+
 $("#cohort").on("change", function () {
   cohort = $(this).val();
 });
 $("#year").on("change", function () {
   year = $(this).val();
 });
+$("#mod-year").on("change", function () {
+  modYear = $(this).val();
+});
 
 let cohort = "";
 let year = "";
+let modYear = "";
 
 // Populate autocomplete
 window.addEventListener("load", async () => {
@@ -25,12 +33,138 @@ window.addEventListener("load", async () => {
     data: { ...data },
   });
   $('.prog-initializer').addClass('hide');
-  $('.form-content').removeClass('hide');
+  $('.form-content').removeClass('hide');  
 });
+
+window.addEventListener("load", async () => {
+  try {
+    const { data } = await axios.get('/mod-autocomplete-data');
+  await $("input#module-autocomplete-input").autocomplete({
+    data: { ...data },
+  });
+  $('.mod-initializer').addClass('hide');  
+  $('.mod-form-content').removeClass('hide');  
+  } catch (err) {
+    console.error(err);
+  }  
+})
 
 function loadFile(url, callback) {
   PizZipUtils.getBinaryContent(url, callback);
 }
+
+async function generateMod() {
+  $('#generate-btn-mod').addClass('hide');
+  $('.mod-loading').removeClass('hide');  
+  let docPath = `/module-spec.docx`;
+  const moduleCode = moduleInput.value.substr(0, 5);
+  try {
+    const { data } = await axios.get(`/mod-data/${moduleCode}/${modYear}`);
+    loadFile(docPath, function (error, content) {
+      if (error) {
+        throw error;
+      }
+
+      // The error object contains additional information when logged with JSON.stringify (it contains a properties object containing all suberrors).
+      function replaceErrors(key, value) {
+        if (value instanceof Error) {
+          return Object.getOwnPropertyNames(value).reduce(function (
+            error,
+            key
+          ) {
+            error[key] = value[key];
+            return error;
+          },
+          {});
+        }
+        return value;
+      }
+
+      function errorHandler(error) {
+        console.log(JSON.stringify({ error: error }, replaceErrors));
+
+        if (error.properties && error.properties.errors instanceof Array) {
+          const errorMessages = error.properties.errors
+            .map(function (error) {
+              return error.properties.explanation;
+            })
+            .join("\n");
+          console.log("errorMessages", errorMessages);
+          // errorMessages is a humanly readable message looking like this :
+          // 'The tag beginning with "foobar" is unopened'
+        }
+        throw error;
+      }
+
+      var zip = new PizZip(content);
+      var doc;
+      try {
+        doc = new window.docxtemplater(zip, {
+          nullGetter() {
+            return "";
+          },
+        });
+      } catch (error) {
+        // Catch compilation errors (errors caused by the compilation of the template : misplaced tags)
+        errorHandler(error);
+      }
+
+      doc.setData({        
+        code: data.code,
+        title: data.title,
+        school: data.school,
+        dept: data.dept,
+        level: data.level,
+        credits: data.credits,
+        semester: data.semester,
+        attachedProgs: data.attachedProgs,
+        prereqs: data.prereqs,
+        coreqs: data.coreqs,
+        campus: data.campus,
+        lecture: data.lecture,
+        seminar: data.seminar,
+        tutorial: data.tutorial,
+        project: data.project,
+        demo: data.demo,
+        practical: data.practical,
+        workshop: data.workshop,
+        fieldwork: data.fieldwork,
+        visits: data.visits,
+        work: data.work,
+        placement: data.placement,
+        independent: data.independent,
+        abroad: data.abroad,
+        description: data.description,
+        outcomes: data.outcomes,
+        summative: data.summative,
+        reassessment: data.reassessment,
+        ctExam: data.ctExam,
+        examPeriod: data.examPeriod,
+        lead: data.lead,
+      });
+      try {
+        // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+        doc.render();
+      } catch (error) {
+        // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
+        errorHandler(error);
+      }
+
+      var out = doc.getZip().generate({
+        type: "blob",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      }); //Output the document using Data-URI
+      saveAs(out, `${data.code}.docx`);      
+    });
+    $('#generate-btn-mod').removeClass('hide');
+    $('.mod-loading').addClass('hide');    
+  } catch (err) {
+    console.error("ERROR - index.js - generate", err);
+  }
+}
+
+
 
 async function generate() {
   $('#generate-btn').addClass('hide');
