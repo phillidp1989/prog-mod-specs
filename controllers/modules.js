@@ -93,8 +93,7 @@ const moduleData = async (req, res, next) => {
   selectedModule = req.params.modCode;  
   selectedYear = req.params.year;
   
-  filePathProgReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`)
-
+  filePathProgReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`)  
   const reqsWorkbook = XLSX.readFile(filePathProgReqs);
   const sheetNames = reqsWorkbook.SheetNames;
   const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);
