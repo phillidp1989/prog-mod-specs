@@ -10,7 +10,7 @@ let filePathContactHours;
 
 // Object to hold module information
 
-const newModule = {
+let newModule = {
   code: '',
   title: '',
   school: '',
@@ -38,7 +38,7 @@ const newModule = {
   placement: 0,
   independent: 0,
   abroad: 0,
-  description: '',
+  description: [],
   outcomes: [],  
   formative: '',
   summative: '',
@@ -50,6 +50,45 @@ const newModule = {
 
 // Function to generate spec
 const moduleData = async (req, res, next) => {
+  
+  newModule = {
+    code: '',
+    title: '',
+    school: '',
+    dept: '',
+    level: '',
+    credits: '',
+    semester: '',
+    attachedProgs: {
+      comp: [],
+      optional: []
+    },
+    prereqs: [],
+    coreqs: [],
+    campus: '',
+    lecture: 0,
+    seminar: 0,
+    tutorial: 0,
+    project: 0,
+    demo: 0,
+    practical: 0,
+    workshop: 0,
+    fieldwork: 0,
+    visits: 0,
+    work: 0,
+    placement: 0,
+    independent: 0,
+    abroad: 0,
+    description: [],
+    outcomes: [],  
+    formative: '',
+    summative: '',
+    reassessment: '',
+    ctExam: false,
+    examPeriod: '',
+    lead: '',  
+  }
+  
   // Prog Attachments
   selectedModule = req.params.modCode;  
   selectedYear = req.params.year;
@@ -130,12 +169,11 @@ const moduleData = async (req, res, next) => {
   const specArray = await csv().fromFile(filePathSpec);
   const filteredSpecArray = specArray.filter(
     (mod) => mod["Course Number"] == selectedModule
-  );
-  console.log(filteredSpecArray);
+  );  
   newModule.code = selectedModule;
   newModule.title = filteredSpecArray[0]['Course Long Desc'];
   newModule.school = filteredSpecArray[0]['Division Desc'];
-  newModule.dept = filteredSpecArray[0]['Inst of Cancer / Genomic Sci'];
+  newModule.dept = filteredSpecArray[0]['Dept Desc'];
   newModule.level = filteredSpecArray[0]['Attribute Level Code'];
   newModule.credits = filteredSpecArray[0]['Credit Hours'];
   newModule.semester = filteredSpecArray[0]['Web Semester Desc'];
@@ -162,10 +200,19 @@ const moduleData = async (req, res, next) => {
   const strippedOutcomes = striptags(filteredSpecArray[0]['Course Outcome'], [], '\n');
   const outcomesArr = strippedOutcomes.split('\n');
   outcomesArr.forEach(el => {
-    newModule.outcomes.push(el)
+    if (el !== '') {
+      newModule.outcomes.push(el)
+    }
   });
   newModule.campus = filteredSpecArray[0]['Section Camp Desc'];
-  newModule.description = striptags(filteredSpecArray[0]['Web Course Desc']);
+  const strippedDescription = striptags(filteredSpecArray[0]['Web Course Desc'], [], '\n');
+  const descArr = strippedDescription.split('\n');
+  descArr.forEach(el => {
+    if (el !== '') {
+      newModule.description.push(el)
+    }
+  });
+  // newModule.description = striptags(filteredSpecArray[0]['Web Course Desc']);
   if (filteredSpecArray[0]['Course Assessment'].includes('Reassessment:')) {
     const assessment = filteredSpecArray[0]['Course Assessment'].split('Reassessment:')
     newModule.summative = striptags(assessment[0]);
@@ -180,16 +227,26 @@ const moduleData = async (req, res, next) => {
   
   if (filteredSpecArray[0]['Swrassc Asmt Code'] !== '') {
     newModule.ctExam = true;
-    newModule.examPeriod = filteredSpecArray[0]['Swvexpe Desc']
+    newModule.examPeriod = filteredSpecArray[0]['Swvexpe Desc'];
   }
 
+  newModule.lead = filteredSpecArray[0]['Course Staff'];
 
   res.status(200).json(newModule);
 };
 
 let initialData = {};
 const moduleAutocompleteData = async (req, res, next) => {
-  
+  filePathSpec = path.join(__dirname, `modulespec2021.csv`);
+  const specArray = await csv().fromFile(filePathSpec);
+  specArray.forEach(mod => {
+    const moduleInfo = `${mod['Course Number']} - ${mod['Course Long Desc']} (${mod['Section Camp Desc']})`;
+    initialData = {
+      ...initialData,
+      [moduleInfo]: null,
+    };
+  })
+
   res.status(200).json(initialData);
 };
 
