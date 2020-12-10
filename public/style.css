@@ -178,7 +178,23 @@ body {
   font-weight: 500;
 }
 
+.mod-initializer {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  font-weight: 500;
+}
+
 .loading {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  font-weight: 500;
+}
+
+.mod-loading {
   display: flex;
   align-items: center;
   flex-direction: column;
