@@ -237,10 +237,11 @@ const moduleData = async (req, res, next) => {
 
 let initialData = {};
 const moduleAutocompleteData = async (req, res, next) => {
-  filePathSpec = path.join(__dirname, `modulespec2021.csv`);
+  let moduleInfo;
+  filePathSpec = path.join(__dirname, `module-autocomplete.csv`);
   const specArray = await csv().fromFile(filePathSpec);
   specArray.forEach(mod => {
-    const moduleInfo = `${mod['Course Number']} - ${mod['Course Long Desc']} (${mod['Section Camp Desc']})`;
+    moduleInfo = `${mod['Course Number']} - ${mod['Course Long Desc']} (${mod['Section Camp Desc']})`;
     initialData = {
       ...initialData,
       [moduleInfo]: null,
