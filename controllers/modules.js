@@ -130,15 +130,19 @@ const moduleData = async (req, res, next) => {
   );  
   filteredArr.forEach((prog) => {
     if (prog['Ruledesc OR Ruletext'] === 'The following must be taken:' || prog['Ruledesc OR Ruletext'] === 'The following modules must be taken:') {
-      newModule.attachedProgs.comp.push({
-        progCode: prog['Smbpgen Program'],
-        progTitle: prog['Smrprle Program Desc']
-      })
+      if (!newModule.attachedProgs.comp.some((el) => el.progCode === prog['Smbpgen Program'])) {
+        newModule.attachedProgs.comp.push({
+          progCode: prog['Smbpgen Program'],
+          progTitle: prog['Smrprle Program Desc']
+        })
+      }
     } else {
-      newModule.attachedProgs.optional.push({
-        progCode: prog['Smbpgen Program'],
-        progTitle: prog['Smrprle Program Desc']
-      })
+      if (!newModule.attachedProgs.optional.some((el) => el.progCode === prog['Smbpgen Program'])) {
+        newModule.attachedProgs.optional.push({
+          progCode: prog['Smbpgen Program'],
+          progTitle: prog['Smrprle Program Desc']
+        })
+      }
     }
   })
   
@@ -209,11 +213,11 @@ const moduleData = async (req, res, next) => {
   // );  
   
   newModule.code = selectedModule;
-  newModule.title = filteredSpecArray[0]['Module Long title'];
+  newModule.title = filteredSpecArray[0]['Module Long title '];
   newModule.school = filteredSpecArray[0]['School Desc'];
   newModule.dept = filteredSpecArray[0]['Dept Desc'];
   newModule.level = filteredSpecArray[0]['Attribute Level Code'];
-  newModule.credits = filteredSpecArray[0]['Module credits'];
+  newModule.credits = filteredSpecArray[0]['Module credits '];
   newModule.semester = filteredSpecArray[0]['Semester'];
   if (filteredSpecArray[0]['Alll Prerequisite Modules (with Desc)']) {
     if (filteredSpecArray[0]['Alll Prerequisite Modules (with Desc)'].includes('|')) {
@@ -241,10 +245,12 @@ const moduleData = async (req, res, next) => {
   
   
   const strippedOutcomes = striptags(filteredSpecArray[0]['Module outcomes'], [], '\n');
-  const outcomesArr = strippedOutcomes.split('\n');
+  const outcomesArr = strippedOutcomes.split('\n');  
   outcomesArr.forEach(el => {
-    if (el !== '') {
-      newModule.outcomes.push(el)
+    if (el !== "") {
+      if (el !== 'By the end of the module students should be able to:') {
+        newModule.outcomes.push(el)
+      }
     }
   });
   newModule.campus = filteredSpecArray[0]['Delivery location'];
