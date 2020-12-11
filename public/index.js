@@ -8,6 +8,7 @@ const elems = document.getElementById("cohort");
 const tabs = document.querySelector(".tabs");
 const instance = M.Tabs.init(tabs);
 const drop = M.FormSelect.init(elems);
+$('.modal').modal();
 
 generateBtn.addEventListener("click", generate);
 generateBtnMod.addEventListener("click", generateMod);
@@ -53,7 +54,38 @@ function loadFile(url, callback) {
   PizZipUtils.getBinaryContent(url, callback);
 }
 
-async function generateMod() {
+
+
+async function generateMod() {       
+  if (modYear === '' && moduleInput.value === '') {
+    $('#alert').text('Please specify a module code and year')
+    $('#modal1').modal('open');
+    return;
+  }
+  if (modYear === '' && moduleInput.value !== '') {
+    $('#alert').text('Please choose an academic year')
+    $('#modal1').modal('open');
+    return;
+  }
+  if (modYear !== '' && moduleInput.value === '') {
+    $('#alert').text('Please specify a module code')
+    $('#modal1').modal('open');
+    return;
+  }
+  
+  if (moduleInput.value.length < 5) {
+    $('#alert').text('The module code you have entered is too short. This must be 5 digits.')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  const inputNum = parseInt(moduleInput.value.substr(0, 5));
+  if (isNaN(inputNum)) {
+    $('#alert').text('The module code you entered is not valid. This must be a 5 digit code')
+    $('#modal1').modal('open');
+    return;
+  }  
+  
   $('#generate-btn-mod').addClass('hide');
   $('.mod-loading').removeClass('hide');  
   let docPath = `/module-spec.docx`;
@@ -160,13 +192,59 @@ async function generateMod() {
     $('#generate-btn-mod').removeClass('hide');
     $('.mod-loading').addClass('hide');    
   } catch (err) {
-    console.error("ERROR - index.js - generate", err);
+    console.error("ERROR - index.js - generate", err);    
+    $('#generate-btn-mod').removeClass('hide');
+    $('.mod-loading').addClass('hide'); 
+    $('#alert').text('Spec could not be generated, please try again')
+    $('#modal1').modal('open');
   }
 }
 
 
 
 async function generate() {
+  if (year === '' && cohort === '' && input.value === '') {
+    $('#alert').text('Please provide a programme code and academic year')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (year === '' && cohort === '') {
+    $('#alert').text('Please provide an academic year and select whether you would like to generate a cohort or academic year spec')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (year === '' && input.value === '') {
+    $('#alert').text('Please provide a programme code and academic year')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (cohort === '') {
+    $('#alert').text('Please select whether you would like to generate a spec by cohort of academic year')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (year === '') {
+    $('#alert').text('Please select an academic year')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (input.value === '') {
+    $('#alert').text('Please provide a valid programme code')
+    $('#modal1').modal('open');
+    return;
+  }
+
+  if (input.value.length < 4) {
+    $('#alert').text('Please provide a valid programme code')
+    $('#modal1').modal('open');
+    return;
+  }
+
   $('#generate-btn').addClass('hide');
   $('.loading').removeClass('hide');  
   let docPath = `/spec${cohort}${year}.docx`;
@@ -276,6 +354,10 @@ async function generate() {
     $('#generate-btn').removeClass('hide');
     $('.loading').addClass('hide');    
   } catch (err) {
+    $('#generate-btn').removeClass('hide');
+    $('.loading').addClass('hide'); 
+    $('#alert').text('Spec could not be generated, please try again')
+    $('#modal1').modal('open');
     console.error("ERROR - index.js - generate", err);
   }
 }
