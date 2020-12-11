@@ -774,10 +774,11 @@ const autocompleteData = async (req, res, next) => {
         break;
     }
     const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
-    initialData = {
-      ...initialData,
-      [progInfo]: null,
-    };
+    initialData[progInfo] = null
+    // initialData = {
+    //   ...initialData,
+    //   [progInfo]: null,
+    // };
   });
   res.status(200).json(initialData);
 };
