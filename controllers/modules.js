@@ -285,7 +285,7 @@ const moduleData = async (req, res, next) => {
   );
   const outcomesArr = strippedOutcomes.split("\n");
   outcomesArr.forEach((el) => {
-    if (el !== "") {
+    if (el.trim() !== "") {
       if (el !== "By the end of the module students should be able to:") {
         newModule.outcomes.push(el.trim());
       }
@@ -312,7 +312,7 @@ const moduleData = async (req, res, next) => {
     const assessment = filteredSpecArray[0][
       "Method(s) of summative assessment and weighting"
     ].split("Reassessment:");
-    console.log('assessment', assessment);
+    
     const strippedSummative = striptags(
       assessment[0],
       [],
@@ -324,18 +324,16 @@ const moduleData = async (req, res, next) => {
       [],
       "\n"
     );
-    console.log('strippedReassessment', strippedReassessment);
+    
     const summArr = strippedSummative.split("\n");
-    console.log('sumArr', summArr);
-    const reArr = strippedReassessment.split("\n");
-    console.log('reArr', reArr);
+    const reArr = strippedReassessment.split("\n");    
     summArr.forEach((el) => {
-      if (el !== "") {
+      if (el.trim() !== "") {
         newModule.summative.push(el.trim());
       }
     });
     reArr.forEach((el) => {
-      if (el !== "") {
+      if (el.trim() !== "") {
         newModule.reassessment.push(el.trim());
       }
     });
