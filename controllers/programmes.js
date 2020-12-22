@@ -2,7 +2,6 @@ const path = require("path");
 let filePathSpec = path.join(__dirname, `progspec2020.csv`);
 let filePathReqs;
 let filePathOutcomes;
-const fs = require("fs");
 const csv = require("csvtojson");
 if (typeof require !== "undefined") XLSX = require("xlsx");
 const striptags = require("striptags");
@@ -10,6 +9,7 @@ let selectedProg = "";
 let selectedCohort = "";
 let selectedYear = "";
 
+let year0Exists = false;
 let year1Exists = false;
 let year2Exists = false;
 let year3Exists = false;
@@ -51,6 +51,13 @@ let newProg = {
     assessment: [],
   },
   years: {
+    year0: {
+      yearText: "",
+      rules: {
+        compulsory: [],
+        optional: [],
+      },
+    },
     year1: {
       yearText: "",
       rules: {
@@ -91,6 +98,7 @@ let newProg = {
   noCollab,
   partner,
   noPartner,
+  year0Exists,
   year1Exists,
   year2Exists,
   year3Exists,
@@ -130,6 +138,13 @@ const programmeData = async (req, res, next) => {
       assessment: [],
     },
     years: {
+      year0: {
+        yearText: "",
+        rules: {
+          compulsory: [],
+          optional: [],
+        },
+      },
       year1: {
         yearText: "",
         rules: {
@@ -170,6 +185,7 @@ const programmeData = async (req, res, next) => {
     noCollab,
     partner,
     noPartner,
+    year0Exists,
     year1Exists,
     year2Exists,
     year3Exists,
@@ -237,6 +253,48 @@ const programmeData = async (req, res, next) => {
 
     newProg.progCode = row["Smbpgen Program"];
     switch (row["Progyear"] || row["Prog Year"]) {
+      case "0":
+        if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
+          if (
+            !newProg.years.year0.rules.compulsory.some(
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
+            )
+          ) {
+            newProg.years.year0.rules.compulsory.push({
+              ruleText: striptags(row["Ruledesc OR Ruletext"]),
+              module: [singleModule],
+            });
+          } else {
+            const moduleIndex = newProg.years.year0.rules.compulsory.findIndex(
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
+            );
+            newProg.years.year0.rules.compulsory[moduleIndex].module.push(
+              singleModule
+            );
+          }
+        } else {
+          if (
+            !newProg.years.year0.rules.optional.some(
+              (el) => el.ruleText === striptags(row["Ruledesc OR Ruletext"])
+            )
+          ) {
+            newProg.years.year0.rules.optional.push({
+              ruleText: striptags(row["Ruledesc OR Ruletext"]),
+              module: [singleModule],
+            });
+          } else {
+            const moduleIndex = newProg.years.year0.rules.optional.findIndex(
+              (module) =>
+                module.ruleText === striptags(row["Ruledesc OR Ruletext"])
+            );
+            newProg.years.year0.rules.optional[moduleIndex].module.push(
+              singleModule
+            );
+          }
+        }
+        newProg.years.year0.yearText = striptags(row.Areagrouptext);
+        break;
       case "1":
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
           if (
@@ -472,7 +530,9 @@ const programmeData = async (req, res, next) => {
   const aimsArr = strippedAims.split("\n");
   aimsArr.forEach((el) => {
     if (el !== "") {
-      newProg.aims.push(el.trim());
+      if (el !== '"') {
+        newProg.aims.push(el.trim());
+      }
     }
   });
 
@@ -496,8 +556,7 @@ const programmeData = async (req, res, next) => {
               newProg.knowledge.learning.push(el.trim());
             }
           });
-          // newProg.knowledge.learning =
-          //   outcome[striptags("Learning and Teaching")];
+          
         }
         if (outcome["Assessment Methods"]) {
           const strippedAssess = striptags(
@@ -511,9 +570,7 @@ const programmeData = async (req, res, next) => {
               newProg.knowledge.assessment.push(el.trim());
             }
           });
-          // newProg.knowledge.assessment = striptags(
-          //   outcome["Assessment Methods"]
-          // );
+          
         }
         break;
       case "S":
@@ -530,7 +587,7 @@ const programmeData = async (req, res, next) => {
               newProg.skills.learning.push(el.trim());
             }
           });
-          // newProg.skills.learning = striptags(outcome["Learning and Teaching"]);
+          
         }
         if (outcome["Assessment Methods"]) {
           const strippedSkillsAssess = striptags(
@@ -544,13 +601,20 @@ const programmeData = async (req, res, next) => {
               newProg.skills.assessment.push(el.trim());
             }
           });
-          // newProg.skills.assessment = striptags(outcome["Assessment Methods"]);
+          
         }
         break;
       default:
         break;
     }
   });
+
+  if (
+    newProg.years.year0.rules.compulsory.length > 0 ||
+    newProg.years.year0.rules.optional.length > 0
+  ) {
+    newProg.year0Exists = true;
+  }
 
   if (
     newProg.years.year1.rules.compulsory.length > 0 ||
@@ -648,18 +712,6 @@ const autocompleteData = async (req, res, next) => {
       return false;
     }
     return true;
-
-    // el["Degree Long Desc"] !== 'Postgraduate Affiliate' ||
-    // el["Degree Long Desc"] !== 'Undergraduate Affiliate' ||
-    // el["Degree Long Desc"] !== 'DA wrapper' ||
-    // el["Degree Long Desc"] !== 'Certificate' ||
-    // el["Degree Long Desc"] !== 'Common European Framework of Reference for Languages B2' ||
-    // el["Degree Long Desc"] !== 'Diploma' ||
-    // el["Degree Long Desc"] !== 'Doctor of Science' ||
-    // el["Degree Long Desc"] !== 'Master of Philosophy' ||
-    // el["Degree Long Desc"] !== 'Doctor of Philosophy' ||
-    // el["Degree Long Desc"] !== 'Visiting Research Student' ||
-    // !el["Degree Long Desc"].includes('AQ')
   });
   filteredInitialData.forEach((prog) => {
     if (
@@ -774,11 +826,7 @@ const autocompleteData = async (req, res, next) => {
         break;
     }
     const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
-    initialData[progInfo] = null
-    // initialData = {
-    //   ...initialData,
-    //   [progInfo]: null,
-    // };
+    initialData[progInfo] = null    
   });
   res.status(200).json(initialData);
 };
