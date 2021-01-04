@@ -119,42 +119,56 @@ const moduleData = async (req, res, next) => {
   // console.log(bigData);
   // console.timeEnd('parallel')
 
-  filePathProgReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`);
+  // filePathProgReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`);
+  filePathProgReqs = path.join(__dirname, `progattachment${selectedYear}.xlsx`);
   const reqsWorkbook = XLSX.readFile(filePathProgReqs);
   const sheetNames = reqsWorkbook.SheetNames;
-  const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);
+  const reqsArrComp = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);
+  const reqsArrOptional = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[1]]);
 
-  const filteredArr = reqsArr.filter(
-    (prog) => prog["Modulecode"] == selectedModule
+  const filteredArrComp = reqsArrComp.filter(
+    (prog) => prog["Module Code"] == selectedModule
   );
-  filteredArr.forEach((prog) => {
-    if (
-      prog["Ruledesc OR Ruletext"] === "The following must be taken:" ||
-      prog["Ruledesc OR Ruletext"] === "The following modules must be taken:"
-    ) {
-      if (
-        !newModule.attachedProgs.comp.some(
-          (el) => el.progCode === prog["Smbpgen Program"]
-        )
-      ) {
-        newModule.attachedProgs.comp.push({
-          progCode: prog["Smbpgen Program"],
-          progTitle: prog["Smrprle Program Desc"],
-        });
-      }
-    } else {
-      if (
-        !newModule.attachedProgs.optional.some(
-          (el) => el.progCode === prog["Smbpgen Program"]
-        )
-      ) {
-        newModule.attachedProgs.optional.push({
-          progCode: prog["Smbpgen Program"],
-          progTitle: prog["Smrprle Program Desc"],
-        });
-      }
-    }
-  });
+  const filteredArrOptional = reqsArrOptional.filter(
+    (prog) => prog["Module Code"] == selectedModule
+  );
+  let comp = [];
+  let opt = [];
+  filteredArrComp.length > 0 ? comp = filteredArrComp[0].Programmes.split('|') : comp = [];
+  // const comp = filteredArrComp[0].Programmes.split('|');
+  newModule.attachedProgs.comp = comp;
+  filteredArrOptional.length > 0 ? opt = filteredArrOptional[0].Programme.split('|') : opt = []
+  // const opt = filteredArrOptional[0].Programme.split('|');
+  newModule.attachedProgs.optional = opt;
+
+  // filteredArrComp.forEach((prog) => {
+  //   if (
+  //     prog["Ruledesc OR Ruletext"] === "The following must be taken:" ||
+  //     prog["Ruledesc OR Ruletext"] === "The following modules must be taken:"
+  //   ) {
+  //     if (
+  //       !newModule.attachedProgs.comp.some(
+  //         (el) => el.progCode === prog["Smbpgen Program"]
+  //       )
+  //     ) {
+  //       newModule.attachedProgs.comp.push({
+  //         progCode: prog["Smbpgen Program"],
+  //         progTitle: prog["Smrprle Program Desc"],
+  //       });
+  //     }
+  //   } else {
+  //     if (
+  //       !newModule.attachedProgs.optional.some(
+  //         (el) => el.progCode === prog["Smbpgen Program"]
+  //       )
+  //     ) {
+  //       newModule.attachedProgs.optional.push({
+  //         progCode: prog["Smbpgen Program"],
+  //         progTitle: prog["Smrprle Program Desc"],
+  //       });
+  //     }
+  //   }
+  // });
 
   // Contact Hours
   filePathContactHours = path.join(
@@ -228,7 +242,6 @@ const moduleData = async (req, res, next) => {
   // const filteredSpecArray = specArray.filter(
   //   (mod) => mod["Course Number"] == selectedModule
   // );
-
   newModule.code = selectedModule;
   newModule.title = filteredSpecArray[0]["Module Long title "];
   newModule.school = filteredSpecArray[0]["School Desc"];
@@ -317,8 +330,7 @@ const moduleData = async (req, res, next) => {
       assessment[0],
       [],
       "\n"
-    );
-    console.log('strippedSummative', strippedSummative);
+    );    
     const strippedReassessment = striptags(
       assessment[1],
       [],
