@@ -8,6 +8,7 @@ const striptags = require("striptags");
 let selectedProg = "";
 let selectedCohort = "";
 let selectedYear = "";
+let reqs = '';
 
 let year0Exists = false;
 let year1Exists = false;
@@ -195,17 +196,23 @@ const programmeData = async (req, res, next) => {
   // Spec
   selectedProg = req.params.progCode;
   selectedCohort = req.params.cohort;
-  selectedYear = req.params.year;
+  selectedYear = req.params.year; 
 
-  filePathSpec = path.join(__dirname, `progspec${selectedYear}.csv`);
+  filePathSpec = path.join(__dirname, `progspec${selectedYear}.xlsx`);
 
-  selectedCohort = "cohort"
-    ? (filePathReqs = path.join(__dirname, `progreqs${selectedYear}.xlsx`))
-    : (filePathReqs = path.join(__dirname, `progreqsterm${selectedYear}.xlsx`));
+  if (selectedCohort === "term") {
+    reqs = 'term'    
+  } else {
+    reqs = ''    
+  }  
 
+  filePathReqs = path.join(__dirname, `progreqs${reqs}${selectedYear}.xlsx`)  
   filePathOutcomes = path.join(__dirname, `outcomes${selectedYear}.xlsx`);
 
-  const specArray = await csv().fromFile(filePathSpec);
+  // const specArray = await csv().fromFile(filePathSpec);
+  const specWorkbook = XLSX.readFile(filePathSpec);
+  const sheetNamesSpec = specWorkbook.SheetNames;
+  const specArray = XLSX.utils.sheet_to_json(specWorkbook.Sheets[sheetNamesSpec[0]]);
   const filteredSpecArray = specArray.filter(
     (prog) => prog["Prog Code"] == selectedProg
   );
@@ -218,7 +225,7 @@ const programmeData = async (req, res, next) => {
   newProg.college = filteredSpecArray[0]["College Desc"];
   newProg.dept1 = filteredSpecArray[0]["Dept1 Short Desc"];
   newProg.dept2 = filteredSpecArray[0]["Dept2 Short Desc"];
-  newProg.school = filteredSpecArray[0]["Division Desc"];
+  newProg.school = filteredSpecArray[0]["School Desc"];
   newProg.progTitle = `${filteredSpecArray[0]["Degree Long Desc"]} ${filteredSpecArray[0]["Prog Long Title"]} ${filteredSpecArray[0]["Prog Mode Desc"]}`;
   newProg.mode = filteredSpecArray[0]["Prog Mode Desc"];
   newProg.campus = filteredSpecArray[0]["Campus Desc"];
@@ -229,19 +236,20 @@ const programmeData = async (req, res, next) => {
   newProg.deliveringInstitution3 =
     filteredSpecArray[0]["Delivering Institution 3 Desc"];
   newProg.regBody = filteredSpecArray[0]["Reg Body Desc"];
-  newProg.subject1 = `${filteredSpecArray[0]["Subject1 Code"]} ${filteredSpecArray[0]["Subject1 Desc"]}`;
-  newProg.subject2 = `${filteredSpecArray[0]["Subject2 Code"]} ${filteredSpecArray[0]["Subject2 Desc"]}`;
-  newProg.subject3 = `${filteredSpecArray[0]["Subject3 Code"]} ${filteredSpecArray[0]["Subject3 Desc"]}`;
+  newProg.subject1 = filteredSpecArray[0]["Subject1 Code"];
+  newProg.subject2 = filteredSpecArray[0]["Subject2 Code"];
+  newProg.subject3 = filteredSpecArray[0]["Subject3 Code"];
 
   // Prog Requirements
   const reqsWorkbook = XLSX.readFile(filePathReqs);
   const sheetNames = reqsWorkbook.SheetNames;
-  const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);
+  const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);  
 
   const filteredReqsArray = reqsArr.filter(
     (prog) => prog["Smbpgen Program"] == selectedProg
-  );
-
+  );  
+  
+  
   filteredReqsArray.forEach((row) => {
     const singleModule = {
       moduleCode: row.Modulecode,
@@ -249,7 +257,8 @@ const programmeData = async (req, res, next) => {
       moduleCredits: row["Scbcrse Credit Hr Low"],
       moduleLevel: row["Attr Level"],
       moduleSemester: row["Stvptrm Desc"],
-    };
+    };   
+
 
     newProg.progCode = row["Smbpgen Program"];
     switch (row["Progyear"] || row["Prog Year"]) {
