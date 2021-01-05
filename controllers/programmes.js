@@ -198,7 +198,8 @@ const programmeData = async (req, res, next) => {
   selectedCohort = req.params.cohort;
   selectedYear = req.params.year; 
 
-  filePathSpec = path.join(__dirname, `progspec${selectedYear}.xlsx`);
+  // filePathSpec = path.join(__dirname, `progspec${selectedYear}.xlsx`);
+  filePathSpec = path.join(__dirname, `progspec${selectedYear}.csv`);
 
   if (selectedCohort === "term") {
     reqs = 'term'    
@@ -209,10 +210,13 @@ const programmeData = async (req, res, next) => {
   filePathReqs = path.join(__dirname, `progreqs${reqs}${selectedYear}.xlsx`)  
   filePathOutcomes = path.join(__dirname, `outcomes${selectedYear}.xlsx`);
 
-  // const specArray = await csv().fromFile(filePathSpec);
-  const specWorkbook = XLSX.readFile(filePathSpec);
-  const sheetNamesSpec = specWorkbook.SheetNames;
-  const specArray = XLSX.utils.sheet_to_json(specWorkbook.Sheets[sheetNamesSpec[0]]);
+  const specArray = await csv().fromFile(filePathSpec);
+  // const specWorkbook = XLSX.readFile(filePathSpec);
+  // const sheetNamesSpec = specWorkbook.SheetNames;
+  // const specArray = XLSX.utils.sheet_to_json(specWorkbook.Sheets[sheetNamesSpec[0]]);
+  // const filteredSpecArray = specArray.filter(
+  //   (prog) => prog["Prog Code"] == selectedProg
+  // );
   const filteredSpecArray = specArray.filter(
     (prog) => prog["Prog Code"] == selectedProg
   );
@@ -260,7 +264,7 @@ const programmeData = async (req, res, next) => {
     };   
 
 
-    newProg.progCode = row["Smbpgen Program"];
+    newProg.progCode = row["Smbpgen Program"];    
     switch (row["Progyear"] || row["Prog Year"]) {
       case "0":
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
