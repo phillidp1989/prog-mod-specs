@@ -224,12 +224,14 @@ const programmeData = async (req, res, next) => {
     filteredSpecArray[0]["Prog Mode Desc"] ===
     "Full-time according to funding coun"
   ) {
-    filteredSpecArray[0]["Prog Mode Desc"] = "Full-time";
+    filteredSpecArray[0]["Prog Mode Desc"] = "FT";
+  } else if (filteredSpecArray[0]["Prog Mode Desc"] === "Part-time") {
+    filteredSpecArray[0]["Prog Mode Desc"] = "PT";
   }
   newProg.college = filteredSpecArray[0]["College Desc"];
   newProg.dept1 = filteredSpecArray[0]["Dept1 Short Desc"];
   newProg.dept2 = filteredSpecArray[0]["Dept2 Short Desc"];
-  newProg.school = filteredSpecArray[0]["School Desc"];
+  newProg.school = filteredSpecArray[0]["Division Desc"];
   newProg.progTitle = `${filteredSpecArray[0]["Degree Long Desc"]} ${filteredSpecArray[0]["Prog Long Title"]} ${filteredSpecArray[0]["Prog Mode Desc"]}`;
   newProg.mode = filteredSpecArray[0]["Prog Mode Desc"];
   newProg.campus = filteredSpecArray[0]["Campus Desc"];
