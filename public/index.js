@@ -250,7 +250,7 @@ async function generate() {
   let docPath = `/spec${cohort}${year}.docx`;
   const progCode = input.value.substr(0, 4);
   try {
-    const { data } = await axios.get(`/data/${progCode}/${cohort}/${year}`);
+    const { data } = await axios.get(`/prog-data/${progCode}/${cohort}/${year}`);
     loadFile(docPath, function (error, content) {
       if (error) {
         throw error;
