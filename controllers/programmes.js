@@ -196,18 +196,18 @@ const programmeData = async (req, res, next) => {
   // Spec
   selectedProg = req.params.progCode;
   selectedCohort = req.params.cohort;
-  selectedYear = req.params.year; 
+  selectedYear = req.params.year;
 
   // filePathSpec = path.join(__dirname, `progspec${selectedYear}.xlsx`);
   filePathSpec = path.join(__dirname, `progspec${selectedYear}.csv`);
 
   if (selectedCohort === "term") {
-    reqs = 'term'    
+    reqs = 'term'
   } else {
-    reqs = ''    
-  }  
+    reqs = ''
+  }
 
-  filePathReqs = path.join(__dirname, `progreqs${reqs}${selectedYear}.xlsx`)  
+  filePathReqs = path.join(__dirname, `progreqs${reqs}${selectedYear}.xlsx`)
   filePathOutcomes = path.join(__dirname, `outcomes${selectedYear}.xlsx`);
 
   const specArray = await csv().fromFile(filePathSpec);
@@ -228,11 +228,137 @@ const programmeData = async (req, res, next) => {
   } else if (filteredSpecArray[0]["Prog Mode Desc"] === "Part-time") {
     filteredSpecArray[0]["Prog Mode Desc"] = "PT";
   }
+  let abbrDegree = '';
+  switch (filteredSpecArray[0]["Degree Long Desc"]) {
+    case "Postgraduate Certificate in Education":
+      abbrDegree = "PGCE";
+      break;
+    case "Postgraduate Certificate":
+      abbrDegree = "PGCert";
+      break;
+    case "Doctor of Philosophy":
+      abbrDegree = "PhD";
+      break;
+    case "Doctor of Medicine":
+      abbrDegree = "MD";
+      break;
+    case "Bachelor of Arts":
+      abbrDegree = "BA";
+      break;
+    case "Certificate of Higher Education":
+      abbrDegree = "CertHE";
+      break;
+    case "Master in Science":
+      abbrDegree = "MSci";
+      break;
+    case "Bachelor of Science":
+      abbrDegree = "BSc";
+      break;
+    case "Visiting Research Student":
+      abbrDegree = "PG VRS";
+      break;
+    case "Master of Arts":
+      abbrDegree = "MA";
+      break;
+    case "Master of Science":
+      abbrDegree = "MSc";
+      break;
+    case "Master of Philosophy":
+      abbrDegree = "MPhil";
+      break;
+    case "Postgraduate Diploma":
+      abbrDegree = "PGDip";
+      break;
+    case "Master of Engineering":
+      abbrDegree = "MEng";
+      break;
+    case "Master of Laws":
+      abbrDegree = "LLM";
+      break;
+    case "Subject Knowledge Enhancement":
+      abbrDegree = "SKE";
+      break;
+    case "Advanced Certificate":
+      abbrDegree = "AdCert";
+      break;
+    case "Doctor of Philosophy with Integrated Study":
+      abbrDegree = "PhD with Integrated Study";
+      break;
+    case "Master of Nursing":
+      abbrDegree = "MNurs";
+      break;
+    case "Bachelor of Nursing":
+      abbrDegree = "BNurs";
+      break;
+    case "Bachelor of Music":
+      abbrDegree = "BMus";
+      break;
+    case "Bachelor of Dental Surgery":
+      abbrDegree = "BDS";
+      break;
+    case "Master of Public Health":
+      abbrDegree = "MPH";
+      break;
+    case "Master of Pharmacy":
+      abbrDegree = "MPharm";
+      break;
+    case "Master of Business Administration":
+      abbrDegree = "MBA";
+      break;
+    case "Doctor of Clinical Psychology":
+      abbrDegree = "ClinPsyD";
+      break;
+    case "Doctorate in Forensic Psychology Practice":
+      abbrDegree = "ForenPsyD";
+      break;
+    case "Bachelor of Medicine and Bachelor of Surgery":
+      abbrDegree = "MBChB";
+      break;
+    case "Master of Education":
+      abbrDegree = "MEd";
+      break;
+    case "Master of Research":
+      abbrDegree = "MRes";
+      break;
+    case "Bachelor of Laws":
+      abbrDegree = "LLB";
+      break;
+    case "Master of Public Administration":
+      abbrDegree = "MPA";
+      break;
+    case "Graduate Certificate":
+      abbrDegree = "GCert";
+      break;
+    case "Undergraduate Certificate":
+      abbrDegree = "UGCert";
+      break;
+    case "Undergraduate Diploma":
+      abbrDegree = "UGDip";
+      break;
+    case "Bachelor of Philosophy":
+      abbrDegree = "BPhil";
+      break;
+    case "Bachelor of Engineering":
+      abbrDegree = "BEng";
+      break;
+    case "Doctorate in Sport and Exercise Sciences":
+      abbrDegree = "DSportExSc";
+      break;
+    case "Bachelor of Medical Science":
+      abbrDegree = "BMedSc";
+      break;
+    case "Forensic Clinical Psychology Doctorate":
+      abbrDegree = "ForenClinPsyD";
+      break;
+    default:
+      break;
+  }
+
   newProg.college = filteredSpecArray[0]["College Desc"];
   newProg.dept1 = filteredSpecArray[0]["Dept1 Short Desc"];
   newProg.dept2 = filteredSpecArray[0]["Dept2 Short Desc"];
   newProg.school = filteredSpecArray[0]["Division Desc"];
-  newProg.progTitle = `${filteredSpecArray[0]["Degree Long Desc"]} ${filteredSpecArray[0]["Prog Long Title"]} ${filteredSpecArray[0]["Prog Mode Desc"]}`;
+  newProg.progTitle = `${abbrDegree} ${filteredSpecArray[0]["Prog Long Title"]} ${filteredSpecArray[0]["Prog Mode Desc"]}`;
   newProg.mode = filteredSpecArray[0]["Prog Mode Desc"];
   newProg.campus = filteredSpecArray[0]["Campus Desc"];
   newProg.length = `${filteredSpecArray[0]["Length"]} ${filteredSpecArray[0]["UOM Desc"]}`;
@@ -249,13 +375,13 @@ const programmeData = async (req, res, next) => {
   // Prog Requirements
   const reqsWorkbook = XLSX.readFile(filePathReqs);
   const sheetNames = reqsWorkbook.SheetNames;
-  const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);  
+  const reqsArr = XLSX.utils.sheet_to_json(reqsWorkbook.Sheets[sheetNames[0]]);
 
   const filteredReqsArray = reqsArr.filter(
     (prog) => prog["Smbpgen Program"] == selectedProg
-  );  
-  
-  
+  );
+
+
   filteredReqsArray.forEach((row) => {
     const singleModule = {
       moduleCode: row.Modulecode,
@@ -263,10 +389,10 @@ const programmeData = async (req, res, next) => {
       moduleCredits: row["Scbcrse Credit Hr Low"],
       moduleLevel: row["Attr Level"],
       moduleSemester: row["Stvptrm Desc"],
-    };   
+    };
 
 
-    newProg.progCode = row["Smbpgen Program"];    
+    newProg.progCode = row["Smbpgen Program"];
     switch (row["Progyear"] || row["Prog Year"]) {
       case "0":
         if (row["Ruledesc OR Ruletext"] === "The following must be taken:") {
@@ -571,7 +697,7 @@ const programmeData = async (req, res, next) => {
               newProg.knowledge.learning.push(el.trim());
             }
           });
-          
+
         }
         if (outcome["Assessment Methods"]) {
           const strippedAssess = striptags(
@@ -585,7 +711,7 @@ const programmeData = async (req, res, next) => {
               newProg.knowledge.assessment.push(el.trim());
             }
           });
-          
+
         }
         break;
       case "S":
@@ -602,7 +728,7 @@ const programmeData = async (req, res, next) => {
               newProg.skills.learning.push(el.trim());
             }
           });
-          
+
         }
         if (outcome["Assessment Methods"]) {
           const strippedSkillsAssess = striptags(
@@ -616,7 +742,7 @@ const programmeData = async (req, res, next) => {
               newProg.skills.assessment.push(el.trim());
             }
           });
-          
+
         }
         break;
       default:
@@ -711,6 +837,9 @@ const autocompleteData = async (req, res, next) => {
       return false;
     }
     if (el["Degree Long Desc"] === "Master of Philosophy") {
+      return false;
+    }
+    if (el["Degree Long Desc"] === "Master of Letters") {
       return false;
     }
     if (el["Degree Long Desc"] === "Doctor of Philosophy") {
@@ -837,11 +966,32 @@ const autocompleteData = async (req, res, next) => {
       case "Forensic Clinical Psychology Doctorate":
         prog["Degree Long Desc"] = "ForenClinPsyD";
         break;
+        case "Master of Nursing":
+          prog["Degree Long Desc"] = "MNurs";
+          break;
+        case "Bachelor of Nursing":
+          prog["Degree Long Desc"] = "BNurs";
+          break;
+        case "Bachelor of Music":
+          prog["Degree Long Desc"] = "BMus";
+          break;
+        case "Bachelor of Dental Surgery":
+          prog["Degree Long Desc"] = "BDS";
+          break;
+        case "Master of Public Health":
+          prog["Degree Long Desc"] = "MPH";
+          break;
+        case "Master of Pharmacy":
+          prog["Degree Long Desc"] = "MPharm";
+          break;
+        case "Master of Business Administration":
+          prog["Degree Long Desc"] = "MBA";
+          break;
       default:
         break;
     }
     const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
-    initialData[progInfo] = null    
+    initialData[progInfo] = null
   });
   res.status(200).json(initialData);
 };
