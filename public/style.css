@@ -18,7 +18,7 @@ body {
 .form-card {
   /* margin-left: 0 !important; */
   /* margin-right: auto !important; */
-  margin-top: 40px;  
+  margin-top: 80px;  
   /* height: 80%; */
   /* display: flex;
   justify-content: center;   */
@@ -194,6 +194,7 @@ body {
   flex-direction: column;
   text-align: center;
   font-weight: 500;
+  font-size: 1.6rem;
 }
 
 .mod-loading {
@@ -202,6 +203,7 @@ body {
   flex-direction: column;
   text-align: center;
   font-weight: 500;
+  font-size: 1.6rem;
 }
 
 .hide {
