@@ -187,7 +187,7 @@ async function generateMod() {
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       }); //Output the document using Data-URI
-      saveAs(out, `${data.code}.docx`);      
+      saveAs(out, `${data.code} ${data.title}.docx`);      
     });
     $('#generate-btn-mod').removeClass('hide');
     $('.mod-loading').addClass('hide');    
@@ -351,7 +351,7 @@ async function generate() {
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       }); //Output the document using Data-URI
-      saveAs(out, `${data.progCode}.docx`);      
+      saveAs(out, `${data.progCode} ${data.progTitle}.docx`);
     });
     $('#generate-btn').removeClass('hide');
     $('.loading').addClass('hide');    
