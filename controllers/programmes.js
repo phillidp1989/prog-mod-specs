@@ -1,5 +1,5 @@
 const path = require("path");
-let filePathSpec = path.join(__dirname, `progspec2020.csv`);
+let filePathSpec = path.join(__dirname, `progspec2021.csv`);
 let filePathReqs;
 let filePathOutcomes;
 const csv = require("csvtojson");
@@ -966,27 +966,27 @@ const autocompleteData = async (req, res, next) => {
       case "Forensic Clinical Psychology Doctorate":
         prog["Degree Long Desc"] = "ForenClinPsyD";
         break;
-        case "Master of Nursing":
-          prog["Degree Long Desc"] = "MNurs";
-          break;
-        case "Bachelor of Nursing":
-          prog["Degree Long Desc"] = "BNurs";
-          break;
-        case "Bachelor of Music":
-          prog["Degree Long Desc"] = "BMus";
-          break;
-        case "Bachelor of Dental Surgery":
-          prog["Degree Long Desc"] = "BDS";
-          break;
-        case "Master of Public Health":
-          prog["Degree Long Desc"] = "MPH";
-          break;
-        case "Master of Pharmacy":
-          prog["Degree Long Desc"] = "MPharm";
-          break;
-        case "Master of Business Administration":
-          prog["Degree Long Desc"] = "MBA";
-          break;
+      case "Master of Nursing":
+        prog["Degree Long Desc"] = "MNurs";
+        break;
+      case "Bachelor of Nursing":
+        prog["Degree Long Desc"] = "BNurs";
+        break;
+      case "Bachelor of Music":
+        prog["Degree Long Desc"] = "BMus";
+        break;
+      case "Bachelor of Dental Surgery":
+        prog["Degree Long Desc"] = "BDS";
+        break;
+      case "Master of Public Health":
+        prog["Degree Long Desc"] = "MPH";
+        break;
+      case "Master of Pharmacy":
+        prog["Degree Long Desc"] = "MPharm";
+        break;
+      case "Master of Business Administration":
+        prog["Degree Long Desc"] = "MBA";
+        break;
       default:
         break;
     }
