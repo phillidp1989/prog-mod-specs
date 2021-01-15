@@ -10,6 +10,10 @@ const instance = M.Tabs.init(tabs);
 const drop = M.FormSelect.init(elems);
 $('.modal').modal();
 
+$(".radio-input").on("change", function () {
+  appendix = ($(this).val());
+});
+
 generateBtn.addEventListener("click", generate);
 generateBtnMod.addEventListener("click", generateMod);
 
@@ -26,6 +30,7 @@ $("#mod-year").on("change", function () {
 let cohort = "";
 let year = "";
 let modYear = "";
+let appendix = "spec";
 
 // Populate autocomplete
 window.addEventListener("load", async () => {
@@ -34,20 +39,20 @@ window.addEventListener("load", async () => {
     data: { ...data },
   });
   $('.prog-initializer').addClass('hide');
-  $('.form-content').removeClass('hide');  
+  $('.form-content').removeClass('hide');
 });
 
 window.addEventListener("load", async () => {
   try {
     const { data } = await axios.get('/mod-autocomplete-data');
-  await $("input#module-autocomplete-input").autocomplete({
-    data: { ...data },
-  });
-  $('.mod-initializer').addClass('hide');  
-  $('.mod-form-content').removeClass('hide');  
+    await $("input#module-autocomplete-input").autocomplete({
+      data: { ...data },
+    });
+    $('.mod-initializer').addClass('hide');
+    $('.mod-form-content').removeClass('hide');
   } catch (err) {
     console.error(err);
-  }  
+  }
 })
 
 function loadFile(url, callback) {
@@ -56,7 +61,7 @@ function loadFile(url, callback) {
 
 
 
-async function generateMod() {       
+async function generateMod() {
   if (modYear === '' && moduleInput.value === '') {
     $('#alert').text('Please specify a module code and year')
     $('#modal1').modal('open');
@@ -72,7 +77,7 @@ async function generateMod() {
     $('#modal1').modal('open');
     return;
   }
-  
+
   if (moduleInput.value.length < 5) {
     $('#alert').text('The module code you have entered is too short. This must be 5 digits.')
     $('#modal1').modal('open');
@@ -84,11 +89,11 @@ async function generateMod() {
     $('#alert').text('The module code you entered is not valid. This must be a 5 digit code')
     $('#modal1').modal('open');
     return;
-  }  
-  
+  }
+
   $('#generate-btn-mod').addClass('hide');
-  $('.mod-loading').removeClass('hide');  
-  let docPath = `/module-spec.docx`;
+  $('.mod-loading').removeClass('hide');
+  let docPath = `/module-${appendix}.docx`;
   const moduleCode = moduleInput.value.substr(0, 5);
   try {
     const { data } = await axios.get(`/mod-data/${moduleCode}/${modYear}`);
@@ -107,7 +112,7 @@ async function generateMod() {
             error[key] = value[key];
             return error;
           },
-          {});
+            {});
         }
         return value;
       }
@@ -141,7 +146,7 @@ async function generateMod() {
         errorHandler(error);
       }
 
-      doc.setData({        
+      doc.setData({
         code: data.code,
         title: data.title,
         school: data.school,
@@ -187,14 +192,14 @@ async function generateMod() {
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       }); //Output the document using Data-URI
-      saveAs(out, `${data.code} ${data.title}.docx`);      
+      saveAs(out, `${data.code} ${data.title}.docx`);
     });
     $('#generate-btn-mod').removeClass('hide');
-    $('.mod-loading').addClass('hide');    
+    $('.mod-loading').addClass('hide');
   } catch (err) {
-    console.error("ERROR - index.js - generate", err);    
+    console.error("ERROR - index.js - generate", err);
     $('#generate-btn-mod').removeClass('hide');
-    $('.mod-loading').addClass('hide'); 
+    $('.mod-loading').addClass('hide');
     $('#alert').text('Spec could not be generated, please try again')
     $('#modal1').modal('open');
   }
@@ -246,7 +251,7 @@ async function generate() {
   }
 
   $('#generate-btn').addClass('hide');
-  $('.loading').removeClass('hide');  
+  $('.loading').removeClass('hide');
   let docPath = `/spec${cohort}${year}.docx`;
   const progCode = input.value.substr(0, 4);
   try {
@@ -266,7 +271,7 @@ async function generate() {
             error[key] = value[key];
             return error;
           },
-          {});
+            {});
         }
         return value;
       }
@@ -354,10 +359,10 @@ async function generate() {
       saveAs(out, `${data.progCode} ${data.progTitle}.docx`);
     });
     $('#generate-btn').removeClass('hide');
-    $('.loading').addClass('hide');    
+    $('.loading').addClass('hide');
   } catch (err) {
     $('#generate-btn').removeClass('hide');
-    $('.loading').addClass('hide'); 
+    $('.loading').addClass('hide');
     $('#alert').text('Spec could not be generated, please try again')
     $('#modal1').modal('open');
     console.error("ERROR - index.js - generate", err);

@@ -1,8 +1,8 @@
 body {
   background-color: #605270 !important;
-    background-image: url(https://intranet.birmingham.ac.uk/Images/brand-resources/somes-sunset-hero-min.jpg);
-    background-size: 100%;
-    background-repeat: no-repeat;
+  background-image: url(https://intranet.birmingham.ac.uk/Images/brand-resources/somes-sunset-hero-min.jpg);
+  background-size: 100%;
+  background-repeat: no-repeat;
 }
 
 .tab-row {
@@ -10,15 +10,15 @@ body {
   padding-right: 0 !important;
 }
 
-#prog-content {  
+#prog-content {
   display: flex;
-  justify-content: center;      
+  justify-content: center;
 }
 
 .form-card {
   /* margin-left: 0 !important; */
   /* margin-right: auto !important; */
-  margin-top: 80px;  
+  margin-top: 80px;
   /* height: 80%; */
   /* display: flex;
   justify-content: center;   */
@@ -29,14 +29,13 @@ body {
   padding-right: 20px;
 }
 
-
 .input-container {
   display: flex;
   justify-content: center;
 }
 
 .input-field {
-  margin-left: 0 !important;  
+  margin-left: 0 !important;
 }
 
 /* .dropdown-container {
@@ -56,8 +55,21 @@ body {
 
 .header {
   text-align: center;
-  background-color: #3A3B87;
-  color: #FFF;
+  background-color: #3a3b87;
+  color: #fff;
+}
+
+.appendix {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.radio-options {
+  padding-left: 30px;
+}
+
+.radio-span {
+  color: black;
 }
 
 /* Loading spinner */
@@ -216,7 +228,7 @@ body {
 }
 
 .modal-content {
-  border-radius: 10px
+  border-radius: 10px;
 }
 
 li a {
@@ -224,11 +236,8 @@ li a {
   font-weight: 600;
 }
 
-/* @media only screen and (min-width: 768px) {
-  .dropdown-container {
-    display: flex;
-    flex-direction: row;    
+@media only screen and (max-width: 768px) {
+  .appendix {
+    flex-direction: column;
   }
-} */
-
-
+}
