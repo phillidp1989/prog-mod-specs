@@ -178,6 +178,8 @@ async function generateMod() {
         ctExam: data.ctExam,
         examPeriod: data.examPeriod,
         lead: data.lead,
+        matchedBoolean: data.matchedBoolean,
+        duplicate: data.duplicate,
       });
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
