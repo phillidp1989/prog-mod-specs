@@ -23,6 +23,18 @@
       integrity="sha512-xA6Hp6oezhjd6LiLZynuukm80f8BoZ3OpcEYaqKoCV3HKQDrYjDE1Gu8ocxgxoXmwmSzM4iqPvCsOkQNiu41GA=="
       crossorigin="anonymous"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -64,14 +76,18 @@
                   id="autocomplete-input"
                   class="autocomplete"
                 />
-                <label for="autocomplete-input">Search for a programme code or title</label>
+                <label for="autocomplete-input"
+                  >Search for a programme code or title</label
+                >
               </div>
             </div>
             <div class="row">
               <div class="col s12 dropdown-container">
                 <div class="input-field col s12 m6">
                   <select id="cohort">
-                    <option value="" disabled selected>Choose your option</option>
+                    <option value="" disabled selected>
+                      Choose your option
+                    </option>
                     <option value="cohort">Cohort Spec</option>
                     <option value="term">Academic Year Spec</option>
                   </select>
@@ -79,9 +95,12 @@
                 </div>
                 <div class="input-field col s12 m6">
                   <select id="year">
-                    <option value="" disabled selected>Choose your option</option>
-                    <option value="2020">2020/21</option>
+                    <option value="" disabled selected>
+                      Choose your option
+                    </option>                    
                     <option value="2021">2021/22</option>
+                    <option value="2022">2022/23</option>
+                    <option value="2023">2023/24</option>
                   </select>
                   <label>Select Academic Year</label>
                 </div>
@@ -140,15 +159,18 @@
                   id="module-autocomplete-input"
                   class="autocomplete"
                 />
-                <label for="autocomplete-input">Search for a module code or title</label>
+                <label for="autocomplete-input"
+                  >Search for a module code or title</label
+                >
               </div>
             </div>
             <div class="row module-year-container">
               <div class="input-field col s11 m9">
                 <select id="mod-year">
-                  <option value="" disabled selected>Choose your option</option>
-                  <option value="2020">2020/21</option>
+                  <option value="" disabled selected>Choose your option</option>                  
                   <option value="2021">2021/22</option>
+                  <option value="2022">2022/23</option>
+                  <option value="2023">2023/24</option>
                 </select>
                 <label>Academic Year</label>
               </div>
@@ -156,13 +178,24 @@
             <div class="row appendix">
               <p class="radio-options">
                 <label>
-                  <input class="radio-input" name="group1" type="radio" value="spec" checked />
+                  <input
+                    class="radio-input"
+                    name="group1"
+                    type="radio"
+                    value="spec"
+                    checked
+                  />
                   <span class="radio-span">Spec only</span>
                 </label>
               </p>
               <p class="radio-options">
                 <label>
-                  <input class="radio-input" name="group1" type="radio" value="spec+"/>
+                  <input
+                    class="radio-input"
+                    name="group1"
+                    type="radio"
+                    value="spec+"
+                  />
                   <span class="radio-span">Spec & modification form</span>
                 </label>
               </p>
@@ -198,20 +231,31 @@
       <div class="col s1 m2 l3"></div>
     </div>
     <!-- Modal Structure -->
-  <div id="modal1" class="modal">
-    <div class="modal-content purple lighten-5">
-      <h4>Something went wrong</h4>
-      <p id="alert"></p>
+    <div id="modal1" class="modal">
+      <div class="modal-content purple lighten-5">
+        <h4>Something went wrong</h4>
+        <p id="alert"></p>
+      </div>
+      <div class="modal-footer purple lighten-4">
+        <a
+          href="#!"
+          class="
+            modal-close
+            waves-effect waves-green
+            btn-flat
+            purple
+            darken-4
+            white-text
+          "
+          >Close</a
+        >
+      </div>
     </div>
-    <div class="modal-footer purple lighten-4">
-      <a href="#!" class="modal-close waves-effect waves-green btn-flat purple darken-4 white-text">Close</a>
-    </div>
-  </div>
   </body>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.19.7/docxtemplater.js"></script>
   <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
-  <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>    
+  <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>
   <script src="index.js"></script>
 </html>

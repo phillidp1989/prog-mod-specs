@@ -13,8 +13,12 @@ const requireUncached = mod => {
 
 const prog2020 = requireUncached('./prog2020.json');
 const prog2021 = requireUncached('./prog2021.json');
+const prog2022 = requireUncached('./prog2022.json');
+const prog2023 = requireUncached('./prog2023.json');
 const progterm2020 = requireUncached('./progterm2020.json');
 const progterm2021 = requireUncached('./progterm2021.json');
+const progterm2022 = requireUncached('./progterm2022.json');
+const progterm2023 = requireUncached('./progterm2023.json');
 
 // Function to generate spec
 const programmeData = async (req, res, next) => {
@@ -36,12 +40,19 @@ const programmeData = async (req, res, next) => {
     data = prog2020.data;
   } else if (reqs === '' && selectedYear === '2021') {
     data = prog2021.data;
+  } else if (reqs === '' && selectedYear === '2022') {
+    data = prog2022.data;
+  } else if (reqs === '' && selectedYear === '2023') {
+    data = prog2023.data;
   } else if (reqs === 'term' && selectedYear === '2020') {
     data = progterm2020.data;
-  } else {
+  } else if (reqs === 'term' && selectedYear === '2021') {
     data = progterm2021.data;
+  } else if (reqs === 'term' && selectedYear === '2022') {
+    data = progterm2022.data;
+  } else if (reqs === 'term' && selectedYear === '2023') {
+    data = progterm2023.data;
   }
-
 
 
   // console.time('test')
@@ -95,7 +106,7 @@ const autocompleteData = async (req, res, next) => {
     if (el["Degree Long Desc"] === "Visiting Research Student") {
       return false;
     }
-    if (el["Degree Code"] == "71") {
+    if (el["Degree Code"] == "071") {      
       return false;
     }
 
@@ -103,7 +114,7 @@ const autocompleteData = async (req, res, next) => {
       return false;
     }
     return true;
-  });
+  });  
   filteredInitialData.forEach((prog) => {
     if (
       prog["Prog Mode Desc"] === "Full-time according to funding coun" ||
