@@ -3,11 +3,24 @@ body {
   background-image: url(https://intranet.birmingham.ac.uk/Images/brand-resources/somes-sunset-hero-min.jpg);
   background-size: 100%;
   background-repeat: no-repeat;
+  font-family: 'Roboto Condensed', sans-serif;  
 }
 
 .tab-row {
   padding-left: 0 !important;
   padding-right: 0 !important;
+}
+
+.tabs .indicator {
+  background-color: #512da8;
+}
+
+.tabs .tab a:hover, .tabs .tab a.active {
+  background-color: rgba(216, 178, 246, 0.2);
+}
+
+.tabs .tab a:focus, .tabs .tab a:focus.active {
+  background-color: rgba(216, 178, 246, 0.2);
 }
 
 #prog-content {
@@ -22,11 +35,14 @@ body {
   /* height: 80%; */
   /* display: flex;
   justify-content: center;   */
-  border-radius: 10%;
-  opacity: 0.95;
+  border-radius: 10px;
+  opacity: 0.92;
   overflow: auto;
   padding-left: 20px;
   padding-right: 20px;
+  max-width: 700px;
+  overflow: visible;
+  /* font-family: 'Roboto', sans-serif; */
 }
 
 .input-container {
@@ -36,6 +52,15 @@ body {
 
 .input-field {
   margin-left: 0 !important;
+}
+
+.dropdown-content {
+  max-height: 60vh;
+  font-family: 'Roboto', sans-serif;
+}
+
+label {
+  font-family: 'Roboto', sans-serif;
 }
 
 /* .dropdown-container {
@@ -57,6 +82,8 @@ body {
   text-align: center;
   background-color: #3a3b87;
   color: #fff;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 .appendix {
