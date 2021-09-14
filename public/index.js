@@ -36,7 +36,7 @@ let appendix = "spec";
 window.addEventListener("load", async () => {
   const { data } = await axios.get("/autocomplete-data");
   $("input#autocomplete-input").autocomplete({
-    data: { ...data },
+    data: { ...data },    
   });
   $('.prog-initializer').addClass('hide');
   $('.form-content').removeClass('hide');
@@ -97,6 +97,11 @@ async function generateMod() {
   const moduleCode = moduleInput.value.substr(0, 5);
   try {
     const { data } = await axios.get(`/mod-data/${moduleCode}/${modYear}`);
+    if (!data) {
+      $('#alert').text('Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk')
+      $('#modal1').modal('open');
+      return;
+    }
     loadFile(docPath, function (error, content) {
       if (error) {
         throw error;
@@ -258,6 +263,11 @@ async function generate() {
   const progCode = input.value.substr(0, 4);
   try {
     const { data } = await axios.get(`/prog-data/${progCode}/${cohort}/${year}`);
+    if (!data) {
+      $('#alert').text('Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk')
+      $('#modal1').modal('open');
+      return;
+    }
     loadFile(docPath, function (error, content) {
       if (error) {
         throw error;
@@ -306,6 +316,9 @@ async function generate() {
         // Catch compilation errors (errors caused by the compilation of the template : misplaced tags)
         errorHandler(error);
       }
+
+      // console log data
+      console.log(data);
 
       doc.setData({
         progCode: data.progCode,
