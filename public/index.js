@@ -185,6 +185,8 @@ async function generateMod() {
         lead: data.lead,
         matchedBoolean: data.matchedBoolean,
         duplicate: data.duplicate,
+        anyComp: data.attachedProgs.comp.length > 0,
+        anyOpt: data.attachedProgs.optional.length > 0,
       });      
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
