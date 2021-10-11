@@ -7,8 +7,9 @@ const requireUncached = (mod) => {
   return require(mod);
 };
 
-const module2020 = requireUncached("./module2020.json");
 const module2021 = requireUncached("./module2021.json");
+const module2022 = requireUncached("./module2022.json");
+const module2023 = requireUncached("./module2023.json");
 
 // Function to remove level from module
 const removeLevel = (module) => {
@@ -26,85 +27,63 @@ const moduleData = async (req, res, next) => {
 
   let data;
 
-  selectedYear === "2020" ? (data = module2020.data) : (data = module2021.data);
-  const final = data.filter((mod) => mod.code === selectedModule);
-  final[0].matchedBoolean = false;
-
-  if (final[0].campus !== "Dubai") {
-    if (
-      data.some(
-        (mod) =>
-          removeLevel(mod.title) === removeLevel(final[0].title) &&
-          mod.dept === final[0].dept &&
-          mod.level === final[0].level &&
-          mod.credits === final[0].credits &&
-          mod.campus === "Dubai"
-      )
-    ) {
-      const matchedModule = JSON.stringify(
-        data
-          .filter(
-            (mod) =>
-              removeLevel(mod.title) === removeLevel(final[0].title) &&
-              mod.dept === final[0].dept &&
-              mod.level === final[0].level &&
-              mod.credits === final[0].credits &&
-              mod.campus === "Dubai"
-          )
-          .map(
-            (mod) =>
-              mod.code +
-              " - " +
-              mod.title +
-              " (" +
-              mod.campus +
-              ")" +
-              " (" +
-              mod.semester +
-              ")"
-          )
-      );
-      final[0].duplicate = JSON.parse(matchedModule);
-      final[0].matchedBoolean = true;
-    }
-  } else {
-    if (
-      data.some(
-        (mod) =>
-          removeLevel(mod.title) === removeLevel(final[0].title) &&
-          mod.dept === final[0].dept &&
-          mod.level === final[0].level &&
-          mod.credits === final[0].credits &&
-          mod.campus !== "Dubai"
-      )
-    ) {
-      const matchedModule = JSON.stringify(
-        data
-          .filter(
-            (mod) =>
-              removeLevel(mod.title) === removeLevel(final[0].title) &&
-              mod.dept === final[0].dept &&
-              mod.level === final[0].level &&
-              mod.credits === final[0].credits &&
-              mod.campus !== "Dubai"
-          )
-          .map(
-            (mod) =>
-              mod.code +
-              " - " +
-              mod.title +
-              " (" +
-              mod.campus +
-              ")" +
-              " (" +
-              mod.semester +
-              ")"
-          )
-      );
-      final[0].duplicate = JSON.parse(matchedModule);
-      final[0].matchedBoolean = true;
-    }
+  switch (selectedYear) {
+    case '2021':
+      data = module2021.data;      
+      break;
+    case '2022':
+      data = module2022.data;
+      break;
+    case '2023':
+      data = module2023.data;
+      break;  
+    default:
+      break;
   }
+
+  // selectedYear === "2021" ? (data = module2021.data) : (data = module2021.data);
+  const final = data.filter((mod) => mod.code === selectedModule);
+  final[0].matchedBoolean = false; 
+
+
+    if (
+      data.some(
+        (mod) =>
+          removeLevel(mod.title) === removeLevel(final[0].title) &&
+          mod.dept === final[0].dept &&
+          mod.level === final[0].level &&
+          mod.credits === final[0].credits &&
+          mod.code !== final[0].code          
+      )
+    ) {
+      const matchedModule = JSON.stringify(
+        data
+          .filter(
+            (mod) =>
+              removeLevel(mod.title) === removeLevel(final[0].title) &&
+              mod.dept === final[0].dept &&
+              mod.level === final[0].level &&
+              mod.credits === final[0].credits &&
+              mod.code !== final[0].code    
+          )
+          .map(
+            (mod) =>
+              mod.code +
+              " - " +
+              mod.title +
+              " (" +
+              mod.campus +
+              ")" +
+              " (" +
+              mod.semester +
+              ")"
+          )
+      );
+      final[0].duplicate = JSON.parse(matchedModule);
+      final[0].matchedBoolean = true;
+    }   
+    
+  
 
   console.log(final[0]);
 

@@ -185,9 +185,10 @@ async function generateMod() {
         lead: data.lead,
         matchedBoolean: data.matchedBoolean,
         duplicate: data.duplicate,
-      });
+      });      
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
+        
         doc.render();
       } catch (error) {
         // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)

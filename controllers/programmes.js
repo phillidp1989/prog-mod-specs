@@ -11,11 +11,11 @@ const requireUncached = mod => {
   return require(mod);
 }
 
-const prog2020 = requireUncached('./prog2020.json');
+// const prog2020 = requireUncached('./prog2020.json');
 const prog2021 = requireUncached('./prog2021.json');
 const prog2022 = requireUncached('./prog2022.json');
 const prog2023 = requireUncached('./prog2023.json');
-const progterm2020 = requireUncached('./progterm2020.json');
+// const progterm2020 = requireUncached('./progterm2020.json');
 const progterm2021 = requireUncached('./progterm2021.json');
 const progterm2022 = requireUncached('./progterm2022.json');
 const progterm2023 = requireUncached('./progterm2023.json');
