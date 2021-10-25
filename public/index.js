@@ -360,6 +360,12 @@ async function generate() {
         year3: data.years.year3,
         year4: data.years.year4,
         year5: data.years.year5,
+        year0OptBool: data.years.year0.rules.optional.length > 0,
+        year1OptBool: data.years.year1.rules.optional.length > 0,
+        year2OptBool: data.years.year2.rules.optional.length > 0,
+        year3OptBool: data.years.year3.rules.optional.length > 0,
+        year4OptBool: data.years.year4.rules.optional.length > 0,
+        year5OptBool: data.years.year5.rules.optional.length > 0,
       });
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
