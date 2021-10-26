@@ -186,7 +186,7 @@ async function generateMod() {
         matchedBoolean: data.matchedBoolean,
         duplicate: data.duplicate,
         anyComp: data.attachedProgs.comp.length > 0,
-        anyOpt: data.attachedProgs.optional.length > 0,
+        anyOpt: data.attachedProgs.optional.length > 0,        
       });      
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
@@ -326,6 +326,7 @@ async function generate() {
       doc.setData({
         progCode: data.progCode,
         progTitle: data.progTitle,
+        shortTitle: data.shortTitle,
         college: data.college,
         school: data.school,
         dept1: data.dept1,
@@ -366,6 +367,8 @@ async function generate() {
         year3OptBool: data.years.year3.rules.optional.length > 0,
         year4OptBool: data.years.year4.rules.optional.length > 0,
         year5OptBool: data.years.year5.rules.optional.length > 0,
+        matchedBoolean: data.matchedBoolean,
+        matchedProgs: data.matchedProgs,
       });
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)

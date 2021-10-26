@@ -4,61 +4,132 @@ const csv = require("csvtojson");
 let selectedProg = "";
 let selectedCohort = "";
 let selectedYear = "";
-let reqs = '';
+let reqs = "";
 
-const requireUncached = mod => {
+const requireUncached = (mod) => {
   delete require.cache[require.resolve(mod)];
   return require(mod);
-}
+};
 
 // const prog2020 = requireUncached('./prog2020.json');
-const prog2021 = requireUncached('./prog2021.json');
-const prog2022 = requireUncached('./prog2022.json');
-const prog2023 = requireUncached('./prog2023.json');
+const prog2021 = requireUncached("./prog2021.json");
+const prog2022 = requireUncached("./prog2022.json");
+const prog2023 = requireUncached("./prog2023.json");
 // const progterm2020 = requireUncached('./progterm2020.json');
-const progterm2021 = requireUncached('./progterm2021.json');
-const progterm2022 = requireUncached('./progterm2022.json');
-const progterm2023 = requireUncached('./progterm2023.json');
+const progterm2021 = requireUncached("./progterm2021.json");
+const progterm2022 = requireUncached("./progterm2022.json");
+const progterm2023 = requireUncached("./progterm2023.json");
 
 // Function to generate spec
 const programmeData = async (req, res, next) => {
-
   // Spec
   selectedProg = req.params.progCode;
   selectedCohort = req.params.cohort;
   selectedYear = req.params.year;
 
   if (selectedCohort === "term") {
-    reqs = 'term'
+    reqs = "term";
   } else {
-    reqs = ''
+    reqs = "";
   }
 
   let data;
 
-  if (reqs === '' && selectedYear === '2020') {
+  if (reqs === "" && selectedYear === "2020") {
     data = prog2020.data;
-  } else if (reqs === '' && selectedYear === '2021') {
+  } else if (reqs === "" && selectedYear === "2021") {
     data = prog2021.data;
-  } else if (reqs === '' && selectedYear === '2022') {
+  } else if (reqs === "" && selectedYear === "2022") {
     data = prog2022.data;
-  } else if (reqs === '' && selectedYear === '2023') {
+  } else if (reqs === "" && selectedYear === "2023") {
     data = prog2023.data;
-  } else if (reqs === 'term' && selectedYear === '2020') {
+  } else if (reqs === "term" && selectedYear === "2020") {
     data = progterm2020.data;
-  } else if (reqs === 'term' && selectedYear === '2021') {
+  } else if (reqs === "term" && selectedYear === "2021") {
     data = progterm2021.data;
-  } else if (reqs === 'term' && selectedYear === '2022') {
+  } else if (reqs === "term" && selectedYear === "2022") {
     data = progterm2022.data;
-  } else if (reqs === 'term' && selectedYear === '2023') {
+  } else if (reqs === "term" && selectedYear === "2023") {
     data = progterm2023.data;
   }
 
+  function stripTitle(title) {    
+    const lower = title.toLowerCase();
+      const result = lower
+      .replace("with year in computer science", "")
+      .replace("and year in computer science", "")
+      .replace("with a year in computer science", "")
+      .replace("with industrial experience", "")
+      .replace("(with international study year)", "")
+      .replace("with year abroad and year in computer science", "")
+      .replace("with year abroad", "")
+      .replace("(with year abroad)", "")
+      .replace("with study abroad", "")
+      .replace("(with study abroad)", "")
+      .replace("with international study", "")
+      .replace("(with international study)", "")
+      .replace("with year in industry", "")
+      .replace("with industrial year", "")
+      .replace("with industrial placement", "")
+      .replace("with semester abroad", "")
+      .replace("with foundation year", "")
+      .replace("with international year", "")
+      .replace("with study in continental europe", "")
+      .replace("with professional placement", "")
+      .replace("with inverted year abroad", "")
+      .replace("full-time", "")
+      .replace("part-time.", "").trim();
+    // console.log(result);
+    return result;
+    
+    // return title
+    //   .toLowerCase()
+    //   .replace(
+    //     "with year in computer science" |
+    //     "with a year in computer science" |
+    //     "with industrial experience" |
+    //     "(with International Study Year)" |
+    //     "with Year Abroad and Year in Computer Science" |
+    //       "with year abroad" |
+    //       "(with year abroad)" |
+    //       "with study abroad" |
+    //       "(with study abroad)" |
+    //       "with international study" |
+    //       "with an international study" |
+    //       "(with international study)" |
+    //       "with year in industry" |
+    //       "with industrial year" |
+    //       "with industrial placement" |
+    //       "with semester abroad"|
+    //       "with foundation year"|
+    //       "with international year"|
+    //       "with international study"|
+    //       "with study in continental europe"|
+    //       "with professional placement"|
+    //       "with inverted year abroad"|
+    //       "Full-time"|
+    //       "Part-time"
+    //       ,
+    //     ""
+    //   ).trim();
+  }
 
   // console.time('test')
   // const { data } = JSON.parse(fs.readFileSync(path.resolve(__dirname, `prog${reqs}${selectedYear}.json`), 'utf8'))
   // console.timeEnd('test');
-  const final = data.filter((prog) => prog.progCode === selectedProg)
+  const final = data.filter((prog) => prog.progCode === selectedProg);
+  final[0].matchedBoolean = false;  
+
+  if (data.some((prog) => stripTitle(prog.progTitle) === stripTitle(final[0].progTitle) && prog.progCode !== final[0].progCode)) {
+    console.log('test');
+    const matchedProgs = JSON.stringify(
+      data.filter((prog) => stripTitle(prog.progTitle) === stripTitle(final[0].progTitle) && prog.progCode !== final[0].progCode).map((prog) => `${prog.progCode} - ${prog.shortTitle}`)
+    )
+    // Remove duplicates from matchedProgs
+    const uniqueMatchedProgs = [...new Set(JSON.parse(matchedProgs))];
+    final[0].matchedProgs = uniqueMatchedProgs;
+    final[0].matchedBoolean = true;
+  }
 
   res.status(200).json(final[0]);
 };
@@ -106,7 +177,7 @@ const autocompleteData = async (req, res, next) => {
     if (el["Degree Long Desc"] === "Visiting Research Student") {
       return false;
     }
-    if (el["Degree Code"] == "071") {      
+    if (el["Degree Code"] == "071") {
       return false;
     }
 
@@ -114,7 +185,7 @@ const autocompleteData = async (req, res, next) => {
       return false;
     }
     return true;
-  });  
+  });
   filteredInitialData.forEach((prog) => {
     if (
       prog["Prog Mode Desc"] === "Full-time according to funding coun" ||
@@ -249,7 +320,7 @@ const autocompleteData = async (req, res, next) => {
         break;
     }
     const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
-    initialData[progInfo] = null
+    initialData[progInfo] = null;
   });
   res.status(200).json(initialData);
 };

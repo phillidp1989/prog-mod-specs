@@ -49,7 +49,7 @@ const moduleData = async (req, res, next) => {
     if (
       data.some(
         (mod) =>
-          removeLevel(mod.title) === removeLevel(final[0].title) &&
+          removeLevel(mod.title).toLowerCase() === removeLevel(final[0].title).toLowerCase() &&
           mod.dept === final[0].dept &&
           mod.level === final[0].level &&
           mod.credits === final[0].credits &&
@@ -60,7 +60,7 @@ const moduleData = async (req, res, next) => {
         data
           .filter(
             (mod) =>
-              removeLevel(mod.title) === removeLevel(final[0].title) &&
+              removeLevel(mod.title).toLowerCase() === removeLevel(final[0].title).toLowerCase() &&
               mod.dept === final[0].dept &&
               mod.level === final[0].level &&
               mod.credits === final[0].credits &&
