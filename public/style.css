@@ -24,14 +24,14 @@ body {
 }
 
 #prog-content {
-  display: flex !important;
+  display: flex;
   justify-content: center;
 }
 
-#module-content {
+/* #module-content {
   display: flex !important;
   justify-content: center;
-}
+} */
 
 .form-card {
   /* margin-left: 0 !important; */
