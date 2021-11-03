@@ -24,7 +24,12 @@ body {
 }
 
 #prog-content {
-  display: flex;
+  display: flex !important;
+  justify-content: center;
+}
+
+#module-content {
+  display: flex !important;
   justify-content: center;
 }
 
