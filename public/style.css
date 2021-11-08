@@ -28,10 +28,11 @@ body {
   justify-content: center;
 }
 
-/* #module-content {
-  display: flex !important;
+#module-content {
+  display: flex;
   justify-content: center;
-} */
+  margin: 0 auto;
+}
 
 .form-card {
   /* margin-left: 0 !important; */
