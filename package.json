@@ -12,8 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^1.27.0",
     "axios": "^0.21.0",
     "csvtojson": "^2.0.10",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "striptags": "^3.1.1",
     "xlsx": "^0.16.9"
