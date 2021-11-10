@@ -1,10 +1,18 @@
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 const path = require("path");
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 let filePathSpec = path.join(__dirname, `progspec2021.csv`);
 const csv = require("csvtojson");
 let selectedProg = "";
 let selectedCohort = "";
 let selectedYear = "";
 let reqs = "";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
 
 const requireUncached = (mod) => {
   delete require.cache[require.resolve(mod)];
@@ -130,6 +138,26 @@ const programmeData = async (req, res, next) => {
     final[0].matchedProgs = uniqueMatchedProgs;
     final[0].matchedBoolean = true;
   }
+
+  async function insertData() {
+    const { data, error } = await supabase
+      .from('specs')
+      .insert([{
+        prog_or_mod: 'prog',
+        code: final[0].progCode,
+        title: final[0].progTitle,
+        college: final[0].college,
+        school: final[0].school,
+        department: final[0].dept1,
+        year: selectedYear,
+      }])
+      return data;
+  }
+
+  insertData().then((data) => {
+    console.log(data);
+  });
+
 
   res.status(200).json(final[0]);
 };

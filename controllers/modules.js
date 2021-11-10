@@ -1,6 +1,11 @@
+require('dotenv').config();
+const { createClient } = require('@supabase/supabase-js');
 const path = require("path");
 const csv = require("csvtojson");
-const { json } = require("body-parser");
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const requireUncached = (mod) => {
   delete require.cache[require.resolve(mod)];
@@ -85,7 +90,24 @@ const moduleData = async (req, res, next) => {
     
   
 
-  console.log(final[0]);
+    async function insertData() {
+      const { data, error } = await supabase
+        .from('specs')
+        .insert([{
+          prog_or_mod: 'mod',
+          code: final[0].code,
+          title: final[0].title,
+          college: final[0].college,
+          school: final[0].school,
+          department: final[0].dept,
+          year: selectedYear,
+        }])
+        return data;
+    }
+  
+    insertData().then((data) => {
+      console.log(data);
+    });
 
   res.status(200).json(final[0]);
 };
