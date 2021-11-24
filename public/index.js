@@ -8,10 +8,10 @@ const elems = document.getElementById("cohort");
 const tabs = document.querySelector(".tabs");
 const instance = M.Tabs.init(tabs);
 const drop = M.FormSelect.init(elems);
-$('.modal').modal();
+$(".modal").modal();
 
 $(".radio-input").on("change", function () {
-  appendix = ($(this).val());
+  appendix = $(this).val();
 });
 
 generateBtn.addEventListener("click", generate);
@@ -31,75 +31,85 @@ let cohort = "";
 let year = "";
 let modYear = "";
 let appendix = "spec";
+// Today's date in dd/mm/yyyy format
+const today = new Date();
+const dd = String(today.getDate()).padStart(2, "0");
+const mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
+const yyyy = today.getFullYear();
+const todayDate = dd + "/" + mm + "/" + yyyy;
 
 // Populate autocomplete
 window.addEventListener("load", async () => {
   const { data } = await axios.get("/autocomplete-data");
   $("input#autocomplete-input").autocomplete({
-    data: { ...data },    
+    data: { ...data },
   });
-  $('.prog-initializer').addClass('hide');
-  $('.form-content').removeClass('hide');
+  $(".prog-initializer").addClass("hide");
+  $(".form-content").removeClass("hide");
 });
 
 window.addEventListener("load", async () => {
   try {
-    const { data } = await axios.get('/mod-autocomplete-data');
+    const { data } = await axios.get("/mod-autocomplete-data");
     await $("input#module-autocomplete-input").autocomplete({
       data: { ...data },
     });
-    $('.mod-initializer').addClass('hide');
-    $('.mod-form-content').removeClass('hide');
+    $(".mod-initializer").addClass("hide");
+    $(".mod-form-content").removeClass("hide");
   } catch (err) {
     console.error(err);
   }
-})
+});
 
 function loadFile(url, callback) {
   PizZipUtils.getBinaryContent(url, callback);
 }
 
-
-
 async function generateMod() {
-  if (modYear === '' && moduleInput.value === '') {
-    $('#alert').text('Please specify a module code and year')
-    $('#modal1').modal('open');
+  if (modYear === "" && moduleInput.value === "") {
+    $("#alert").text("Please specify a module code and year");
+    $("#modal1").modal("open");
     return;
   }
-  if (modYear === '' && moduleInput.value !== '') {
-    $('#alert').text('Please choose an academic year')
-    $('#modal1').modal('open');
+  if (modYear === "" && moduleInput.value !== "") {
+    $("#alert").text("Please choose an academic year");
+    $("#modal1").modal("open");
     return;
   }
-  if (modYear !== '' && moduleInput.value === '') {
-    $('#alert').text('Please specify a module code')
-    $('#modal1').modal('open');
+  if (modYear !== "" && moduleInput.value === "") {
+    $("#alert").text("Please specify a module code");
+    $("#modal1").modal("open");
     return;
   }
 
   if (moduleInput.value.length < 5) {
-    $('#alert').text('The module code you have entered is too short. This must be 5 digits.')
-    $('#modal1').modal('open');
+    $("#alert").text(
+      "The module code you have entered is too short. This must be 5 digits."
+    );
+    $("#modal1").modal("open");
     return;
   }
 
   const inputNum = parseInt(moduleInput.value.substr(0, 5));
   if (isNaN(inputNum)) {
-    $('#alert').text('The module code you entered is not valid. This must be a 5 digit code')
-    $('#modal1').modal('open');
+    $("#alert").text(
+      "The module code you entered is not valid. This must be a 5 digit code"
+    );
+    $("#modal1").modal("open");
     return;
   }
 
-  $('#generate-btn-mod').addClass('hide');
-  $('.mod-loading').removeClass('hide');
+  $("#generate-btn-mod").addClass("hide");
+  $(".mod-loading").removeClass("hide");
   let docPath = `/module-${appendix}.docx`;
   const moduleCode = moduleInput.value.substr(0, 5);
   try {
     const { data } = await axios.get(`/mod-data/${moduleCode}/${modYear}`);
     if (!data) {
-      $('#alert').text('Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk')
-      $('#modal1').modal('open');
+      $("#alert").text(
+        "Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk"
+      );
+      $("#modal1").modal("open");
       return;
     }
     loadFile(docPath, function (error, content) {
@@ -117,7 +127,7 @@ async function generateMod() {
             error[key] = value[key];
             return error;
           },
-            {});
+          {});
         }
         return value;
       }
@@ -186,11 +196,12 @@ async function generateMod() {
         matchedBoolean: data.matchedBoolean,
         duplicate: data.duplicate,
         anyComp: data.attachedProgs.comp.length > 0,
-        anyOpt: data.attachedProgs.optional.length > 0,        
-      });      
+        anyOpt: data.attachedProgs.optional.length > 0,
+        date: todayDate,
+      });
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
-        
+
         doc.render();
       } catch (error) {
         // Catch rendering errors (errors relating to the rendering of the template : angularParser throws an error)
@@ -204,71 +215,77 @@ async function generateMod() {
       }); //Output the document using Data-URI
       saveAs(out, `${data.code} ${data.title}.docx`);
     });
-    $('#generate-btn-mod').removeClass('hide');
-    $('.mod-loading').addClass('hide');
+    $("#generate-btn-mod").removeClass("hide");
+    $(".mod-loading").addClass("hide");
   } catch (err) {
     console.error("ERROR - index.js - generate", err);
-    $('#generate-btn-mod').removeClass('hide');
-    $('.mod-loading').addClass('hide');
-    $('#alert').text('Spec could not be generated, please try again')
-    $('#modal1').modal('open');
+    $("#generate-btn-mod").removeClass("hide");
+    $(".mod-loading").addClass("hide");
+    $("#alert").text("Spec could not be generated, please try again");
+    $("#modal1").modal("open");
   }
 }
 
-
-
 async function generate() {
-  if (year === '' && cohort === '' && input.value === '') {
-    $('#alert').text('Please provide a programme code and academic year')
-    $('#modal1').modal('open');
+  if (year === "" && cohort === "" && input.value === "") {
+    $("#alert").text("Please provide a programme code and academic year");
+    $("#modal1").modal("open");
     return;
   }
 
-  if (year === '' && cohort === '') {
-    $('#alert').text('Please provide an academic year and select whether you would like to generate a cohort or academic year spec')
-    $('#modal1').modal('open');
+  if (year === "" && cohort === "") {
+    $("#alert").text(
+      "Please provide an academic year and select whether you would like to generate a cohort or academic year spec"
+    );
+    $("#modal1").modal("open");
     return;
   }
 
-  if (year === '' && input.value === '') {
-    $('#alert').text('Please provide a programme code and academic year')
-    $('#modal1').modal('open');
+  if (year === "" && input.value === "") {
+    $("#alert").text("Please provide a programme code and academic year");
+    $("#modal1").modal("open");
     return;
   }
 
-  if (cohort === '') {
-    $('#alert').text('Please select whether you would like to generate a spec by cohort of academic year')
-    $('#modal1').modal('open');
+  if (cohort === "") {
+    $("#alert").text(
+      "Please select whether you would like to generate a spec by cohort of academic year"
+    );
+    $("#modal1").modal("open");
     return;
   }
 
-  if (year === '') {
-    $('#alert').text('Please select an academic year')
-    $('#modal1').modal('open');
+  if (year === "") {
+    $("#alert").text("Please select an academic year");
+    $("#modal1").modal("open");
     return;
   }
 
-  if (input.value === '') {
-    $('#alert').text('Please provide a valid programme code')
-    $('#modal1').modal('open');
+  if (input.value === "") {
+    $("#alert").text("Please provide a valid programme code");
+    $("#modal1").modal("open");
     return;
   }
 
   if (input.value.length < 4) {
-    $('#alert').text('Please provide a valid programme code')
-    $('#modal1').modal('open');
+    $("#alert").text("Please provide a valid programme code");
+    $("#modal1").modal("open");
     return;
   }
 
-  $('#generate-btn').addClass('hide');
-  $('.loading').removeClass('hide');
+  $("#generate-btn").addClass("hide");
+  $(".loading").removeClass("hide");
   let docPath = `/spec${cohort}${year}.docx`;
   const progCode = input.value.substr(0, 4);
   try {
-    const { data } = await axios.get(`/prog-data/${progCode}/${cohort}/${year}`);
+    const { data } = await axios.get(
+      `/prog-data/${progCode}/${cohort}/${year}`
+    );
     if (!data) {
-      $('#alert').text('Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk')
-      $('#modal1').modal('open');
+      $("#alert").text(
+        "Spec could not be generated, please contact Dan Phillips at d.p.phillips@bham.ac.uk"
+      );
+      $("#modal1").modal("open");
       return;
     }
     loadFile(docPath, function (error, content) {
@@ -286,7 +303,7 @@ async function generate() {
             error[key] = value[key];
             return error;
           },
-            {});
+          {});
         }
         return value;
       }
@@ -369,6 +386,7 @@ async function generate() {
         year5OptBool: data.years.year5.rules.optional.length > 0,
         matchedBoolean: data.matchedBoolean,
         matchedProgs: data.matchedProgs,
+        date: todayDate,
       });
       try {
         // render the document (replace all occurences of {first_name} by John, {last_name} by Doe, ...)
@@ -385,13 +403,13 @@ async function generate() {
       }); //Output the document using Data-URI
       saveAs(out, `${data.progCode} ${data.progTitle}.docx`);
     });
-    $('#generate-btn').removeClass('hide');
-    $('.loading').addClass('hide');
+    $("#generate-btn").removeClass("hide");
+    $(".loading").addClass("hide");
   } catch (err) {
-    $('#generate-btn').removeClass('hide');
-    $('.loading').addClass('hide');
-    $('#alert').text('Spec could not be generated, please try again')
-    $('#modal1').modal('open');
+    $("#generate-btn").removeClass("hide");
+    $(".loading").addClass("hide");
+    $("#alert").text("Spec could not be generated, please try again");
+    $("#modal1").modal("open");
     console.error("ERROR - index.js - generate", err);
   }
 }
