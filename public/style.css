@@ -204,6 +204,11 @@ label {
   }
 }
 
+.input-field label {
+  pointer-events: none;
+}
+
+
 .prog-initializer {
   display: flex;
   align-items: center;
