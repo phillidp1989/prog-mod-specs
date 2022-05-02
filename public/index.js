@@ -381,6 +381,8 @@ async function generate() {
         benchmark: data.benchmark,
         knowledge: data.knowledge,
         skills: data.skills,
+        accreditation: data.accreditation,
+        accreditationBool: data.accreditationBool,
         collaboration: data.collaboration,
         noCollab: data.noCollab,
         partner: data.partner,
