@@ -10,10 +10,6 @@ const instance = M.Tabs.init(tabs);
 const drop = M.FormSelect.init(elems);
 $(".modal").modal();
 
-
-
-
-
 $(".radio-input").on("change", function () {
   appendix = $(this).val();
 });
@@ -21,20 +17,19 @@ $(".radio-input").on("change", function () {
 generateBtn.addEventListener("click", generate);
 generateBtnMod.addEventListener("click", generateMod);
 
-input.addEventListener("keyup", function(event) {
+input.addEventListener("keyup", function (event) {
   if (event.keyCode === 13) {
     event.preventDefault();
     document.getElementById("generate-btn").click();
   }
 });
 
-moduleInput.addEventListener("keyup", function(event) {
+moduleInput.addEventListener("keyup", function (event) {
   if (event.keyCode === 13) {
     event.preventDefault();
     document.getElementById("generate-btn-mod").click();
   }
 });
-
 
 $("#cohort").on("change", function () {
   cohort = $(this).val();
