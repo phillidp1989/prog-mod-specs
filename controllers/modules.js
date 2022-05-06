@@ -34,7 +34,7 @@ const moduleData = async (req, res, next) => {
 
   switch (selectedYear) {
     case '2021':
-      data = module2021.data;      
+      data = module2021.data;   
       break;
     case '2022':
       data = module2022.data;
