@@ -126,21 +126,23 @@ const programmeData = async (req, res, next) => {
   // const { data } = JSON.parse(fs.readFileSync(path.resolve(__dirname, `prog${reqs}${selectedYear}.json`), 'utf8'))
   // console.timeEnd('test');
   const final = data.filter((prog) => prog.progCode === selectedProg);
+  if (final.length > 0) {
   final[0].matchedBoolean = false;  
-
+  
   if (data.some((prog) => stripTitle(prog.progTitle) === stripTitle(final[0].progTitle) && prog.progCode !== final[0].progCode)) {
     console.log('test');
     const matchedProgs = JSON.stringify(
       data.filter((prog) => stripTitle(prog.progTitle) === stripTitle(final[0].progTitle) && prog.progCode !== final[0].progCode).map((prog) => `${prog.progCode} - ${prog.shortTitle}`)
-    )
-    // Remove duplicates from matchedProgs
-    const uniqueMatchedProgs = [...new Set(JSON.parse(matchedProgs))];
-    final[0].matchedProgs = uniqueMatchedProgs;
-    final[0].matchedBoolean = true;
+      )
+      // Remove duplicates from matchedProgs
+      const uniqueMatchedProgs = [...new Set(JSON.parse(matchedProgs))];
+      final[0].matchedProgs = uniqueMatchedProgs;
+      final[0].matchedBoolean = true;
+    }
+    
   }
-
-  async function insertData() {
-    const { data, error } = await supabase
+    async function insertData() {
+      const { data, error } = await supabase
       .from('specs')
       .insert([{
         prog_or_mod: 'prog',
@@ -152,12 +154,12 @@ const programmeData = async (req, res, next) => {
         year: selectedYear,
       }])
       return data;
+    }
+    if (final.length > 0) {
+    insertData().then((data) => {
+      console.log(data);
+    });
   }
-
-  insertData().then((data) => {
-    console.log(data);
-  });
-
 
   res.status(200).json(final[0]);
 };
