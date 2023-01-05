@@ -71,6 +71,7 @@ const programmeData = async (req, res, next) => {
       .replace("(with international study year)", "")
       .replace("with year abroad and year in computer science", "")
       .replace("with year abroad", "")
+      .replace("with placement year", "")
       .replace("(with year abroad)", "")
       .replace("with study abroad", "")
       .replace("(with study abroad)", "")
