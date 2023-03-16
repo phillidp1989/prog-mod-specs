@@ -48,7 +48,7 @@ const moduleData = async (req, res, next) => {
 
   // selectedYear === "2021" ? (data = module2021.data) : (data = module2021.data);
   const final = data.filter((mod) => mod.code === selectedModule);
-  final[0].matchedBoolean = false; 
+  final[0].matchedBoolean = false;
 
 
     if (
