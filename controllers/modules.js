@@ -12,9 +12,10 @@ const requireUncached = (mod) => {
   return require(mod);
 };
 
-const module2021 = requireUncached("./module2021.json");
+
 const module2022 = requireUncached("./module2022.json");
 const module2023 = requireUncached("./module2023.json");
+const module2024 = requireUncached("./module2024.json");
 
 // Function to remove level from module
 const removeLevel = (module) => {
@@ -33,8 +34,8 @@ const moduleData = async (req, res, next) => {
   let data;
 
   switch (selectedYear) {
-    case '2021':
-      data = module2021.data;   
+    case '2024':
+      data = module2024.data;   
       break;
     case '2022':
       data = module2022.data;

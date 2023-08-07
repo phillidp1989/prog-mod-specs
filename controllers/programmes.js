@@ -20,13 +20,14 @@ const requireUncached = (mod) => {
 };
 
 // const prog2020 = requireUncached('./prog2020.json');
-const prog2021 = requireUncached("./prog2021.json");
+
 const prog2022 = requireUncached("./prog2022.json");
 const prog2023 = requireUncached("./prog2023.json");
+const prog2024 = requireUncached("./prog2024.json");
 // const progterm2020 = requireUncached('./progterm2020.json');
-const progterm2021 = requireUncached("./progterm2021.json");
 const progterm2022 = requireUncached("./progterm2022.json");
 const progterm2023 = requireUncached("./progterm2023.json");
+const progterm2024 = requireUncached("./progterm2024.json");
 
 // Function to generate spec
 const programmeData = async (req, res, next) => {
@@ -43,16 +44,16 @@ const programmeData = async (req, res, next) => {
 
   let data;
 
-  if (reqs === "" && selectedYear === "2020") {
-    data = prog2020.data;
+  if (reqs === "" && selectedYear === "2024") {
+    data = prog2024.data;
   } else if (reqs === "" && selectedYear === "2021") {
     data = prog2021.data;
   } else if (reqs === "" && selectedYear === "2022") {
     data = prog2022.data;
   } else if (reqs === "" && selectedYear === "2023") {
     data = prog2023.data;
-  } else if (reqs === "term" && selectedYear === "2020") {
-    data = progterm2020.data;
+  } else if (reqs === "term" && selectedYear === "2024") {
+    data = progterm2024.data;
   } else if (reqs === "term" && selectedYear === "2021") {
     data = progterm2021.data;
   } else if (reqs === "term" && selectedYear === "2022") {
@@ -220,10 +221,11 @@ const autocompleteData = async (req, res, next) => {
   filteredInitialData.forEach((prog) => {
     if (
       prog["Prog Mode Desc"] === "Full-time according to funding coun" ||
+      prog["Prog Mode Desc"] === "Full-time" ||
       prog["Prog Mode Desc"] === "Other full-time"
     ) {
       prog["Prog Mode Desc"] = "FT";
-    } else if (prog["Prog Mode Desc"] === "Part-time") {
+    } else if (prog["Prog Mode Desc"] === "Part-time.") {
       prog["Prog Mode Desc"] = "PT";
     }
     switch (prog["Degree Long Desc"]) {
@@ -349,8 +351,8 @@ const autocompleteData = async (req, res, next) => {
         break;
       default:
         break;
-    }
-    const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]}`;
+    }    
+    const progInfo = `${prog["Prog Code"]} - ${prog["Degree Long Desc"]} ${prog["Prog Long Title"]} ${prog["Prog Mode Desc"]} (${prog["Campus Desc"]})`;
     initialData[progInfo] = null;
   });
   res.status(200).json(initialData);
