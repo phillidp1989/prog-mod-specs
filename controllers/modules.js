@@ -122,6 +122,8 @@ const moduleAutocompleteData = async (req, res, next) => {
   specArray.forEach((mod) => {
     if (mod["Section Camp Desc"]) {
       camp = ` (${mod["Section Camp Desc"]})`;
+    } else {
+      camp = "";
     }
     moduleInfo = `${mod["Course Number"]} - ${mod["Course Long Desc"]}${camp}`;
     initialData[moduleInfo] = null;
