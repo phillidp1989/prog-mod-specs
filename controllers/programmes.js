@@ -21,13 +21,13 @@ const requireUncached = (mod) => {
 
 // const prog2020 = requireUncached('./prog2020.json');
 
-const prog2022 = requireUncached("./prog2022.json");
 const prog2023 = requireUncached("./prog2023.json");
 const prog2024 = requireUncached("./prog2024.json");
+const prog2025 = requireUncached("./prog2025.json");
 // const progterm2020 = requireUncached('./progterm2020.json');
-const progterm2022 = requireUncached("./progterm2022.json");
 const progterm2023 = requireUncached("./progterm2023.json");
 const progterm2024 = requireUncached("./progterm2024.json");
+const progterm2025 = requireUncached("./progterm2025.json");
 
 // Function to generate spec
 const programmeData = async (req, res, next) => {
@@ -46,18 +46,14 @@ const programmeData = async (req, res, next) => {
 
   if (reqs === "" && selectedYear === "2024") {
     data = prog2024.data;
-  } else if (reqs === "" && selectedYear === "2021") {
-    data = prog2021.data;
-  } else if (reqs === "" && selectedYear === "2022") {
-    data = prog2022.data;
+  } else if (reqs === "" && selectedYear === "2025") {
+    data = prog2025.data;  
   } else if (reqs === "" && selectedYear === "2023") {
     data = prog2023.data;
   } else if (reqs === "term" && selectedYear === "2024") {
     data = progterm2024.data;
-  } else if (reqs === "term" && selectedYear === "2021") {
-    data = progterm2021.data;
-  } else if (reqs === "term" && selectedYear === "2022") {
-    data = progterm2022.data;
+  } else if (reqs === "term" && selectedYear === "2025") {
+    data = progterm2025.data;  
   } else if (reqs === "term" && selectedYear === "2023") {
     data = progterm2023.data;
   }
