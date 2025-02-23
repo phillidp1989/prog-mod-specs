@@ -2,6 +2,7 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const path = require("path");
 const csv = require("csvtojson");
+const { log } = require('console');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
@@ -49,6 +50,7 @@ const moduleData = async (req, res, next) => {
 
   // selectedYear === "2021" ? (data = module2021.data) : (data = module2021.data);
   const final = data.filter((mod) => mod.code === selectedModule);
+  console.log(final[0]);
   final[0].matchedBoolean = false;
 
 
