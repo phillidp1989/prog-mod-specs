@@ -21,11 +21,11 @@ const requireUncached = (mod) => {
 
 // const prog2020 = requireUncached('./prog2020.json');
 
-const prog2023 = requireUncached("./prog2023.json");
+const prog2026 = requireUncached("./prog2026.json");
 const prog2024 = requireUncached("./prog2024.json");
 const prog2025 = requireUncached("./prog2025.json");
 // const progterm2020 = requireUncached('./progterm2020.json');
-const progterm2023 = requireUncached("./progterm2023.json");
+const progterm2026 = requireUncached("./progterm2026.json");
 const progterm2024 = requireUncached("./progterm2024.json");
 const progterm2025 = requireUncached("./progterm2025.json");
 
@@ -48,14 +48,14 @@ const programmeData = async (req, res, next) => {
     data = prog2024.data;
   } else if (reqs === "" && selectedYear === "2025") {
     data = prog2025.data;  
-  } else if (reqs === "" && selectedYear === "2023") {
-    data = prog2023.data;
+  } else if (reqs === "" && selectedYear === "2026") {
+    data = prog2026.data;
   } else if (reqs === "term" && selectedYear === "2024") {
     data = progterm2024.data;
   } else if (reqs === "term" && selectedYear === "2025") {
     data = progterm2025.data;  
-  } else if (reqs === "term" && selectedYear === "2023") {
-    data = progterm2023.data;
+  } else if (reqs === "term" && selectedYear === "2026") {
+    data = progterm2026.data;
   }
 
   function stripTitle(title) {    

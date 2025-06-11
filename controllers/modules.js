@@ -14,7 +14,7 @@ const requireUncached = (mod) => {
 };
 
 
-const module2023 = requireUncached("./module2023.json");
+const module2026 = requireUncached("./module2026.json");
 const module2024 = requireUncached("./module2024.json");
 const module2025 = requireUncached("./module2025.json");
 
@@ -41,8 +41,8 @@ const moduleData = async (req, res, next) => {
     case '2025':
       data = module2025.data;
       break;
-    case '2023':
-      data = module2023.data;
+    case '2026':
+      data = module2026.data;
       break;  
     default:
       break;
