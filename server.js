@@ -5,6 +5,11 @@ const apiRoutes = require('./routes/api');
 const PORT = process.env.PORT || 8080;
 const app = express();
 
+// Serve modern UI at /modern
+app.get('/modern', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index-modern.html'));
+});
+
 app.get('/download-spec/term/2020', (req, res) => {
   const docPath = path.join(__dirname, '/public', 'specterm2020.docx');
   res.download(docPath, 'spec.docx', function(err) {

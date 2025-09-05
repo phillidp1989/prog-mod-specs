@@ -1,0 +1,604 @@
+// Modern App JavaScript
+let progAutocompleteData = {};
+let modAutocompleteData = {};
+let recentProgrammes = [];
+let recentModules = [];
+let favorites = {
+    programmes: [],
+    modules: []
+};
+
+// Load favorites from localStorage
+if (localStorage.getItem('favorites')) {
+    favorites = JSON.parse(localStorage.getItem('favorites'));
+}
+
+// Load recent items from localStorage
+if (localStorage.getItem('recentProgrammes')) {
+    recentProgrammes = JSON.parse(localStorage.getItem('recentProgrammes'));
+}
+if (localStorage.getItem('recentModules')) {
+    recentModules = JSON.parse(localStorage.getItem('recentModules'));
+}
+
+// Initialize autocomplete data
+async function initializeAutocomplete() {
+    try {
+        // Load programme autocomplete data
+        const progResponse = await axios.get('/autocomplete-data');
+        progAutocompleteData = progResponse.data;
+        
+        // Setup programme autocomplete
+        setupAutocomplete('prog-search', progAutocompleteData);
+        
+        // Load module autocomplete data
+        const modResponse = await axios.get('/mod-autocomplete-data');
+        modAutocompleteData = modResponse.data;
+        
+        // Setup module autocomplete
+        setupAutocomplete('mod-search', modAutocompleteData);
+    } catch (error) {
+        console.error('Error loading autocomplete data:', error);
+        showNotification('Error loading data. Please refresh the page.', 'error');
+    }
+}
+
+// Setup autocomplete functionality
+function setupAutocomplete(inputId, data) {
+    const input = document.getElementById(inputId);
+    const dataList = Object.keys(data);
+    
+    // Create dropdown container
+    const dropdown = document.createElement('div');
+    dropdown.className = 'absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-auto hidden';
+    dropdown.id = `${inputId}-dropdown`;
+    input.parentElement.appendChild(dropdown);
+    
+    // Input event listener
+    input.addEventListener('input', (e) => {
+        const value = e.target.value.toLowerCase();
+        if (value.length < 2) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+        
+        const filtered = dataList.filter(item => 
+            item.toLowerCase().includes(value)
+        ).slice(0, 10);
+        
+        if (filtered.length === 0) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+        
+        dropdown.innerHTML = filtered.map(item => `
+            <div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-900 dark:text-gray-100" onclick="selectAutocomplete('${inputId}', '${item.replace(/'/g, "\\'")}')">${highlightMatch(item, value)}</div>
+        `).join('');
+        
+        dropdown.classList.remove('hidden');
+    });
+    
+    // Hide dropdown on click outside
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Highlight matching text
+function highlightMatch(text, search) {
+    const regex = new RegExp(`(${search})`, 'gi');
+    return text.replace(regex, '<span class="font-semibold text-primary-600 dark:text-primary-400">$1</span>');
+}
+
+// Select autocomplete item
+function selectAutocomplete(inputId, value) {
+    document.getElementById(inputId).value = value;
+    document.getElementById(`${inputId}-dropdown`).classList.add('hidden');
+}
+
+// Programme generate handler
+document.getElementById('prog-generate-btn').addEventListener('click', async () => {
+    const searchValue = document.getElementById('prog-search').value;
+    const cohort = document.getElementById('cohort-select').value;
+    const year = document.getElementById('year-select').value;
+    
+    if (!searchValue || !cohort || !year) {
+        showNotification('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    const progCode = searchValue.split(' - ')[0];
+    
+    showLoading(true);
+    
+    try {
+        const response = await axios.get(`/prog-data/${progCode}/${cohort}/${year}`);
+        const data = response.data;
+        
+        if (!data) {
+            showNotification('Programme not found', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Add to recent programmes
+        addToRecent('programmes', {
+            code: progCode,
+            title: data.progTitle,
+            cohort: cohort,
+            year: year,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Generate document
+        await generateProgrammeDoc(data, cohort, year);
+        
+        showLoading(false);
+        showNotification('Specification generated successfully!', 'success');
+    } catch (error) {
+        console.error('Error generating specification:', error);
+        showNotification('Error generating specification', 'error');
+        showLoading(false);
+    }
+});
+
+// Programme preview handler
+document.getElementById('prog-preview-btn').addEventListener('click', async () => {
+    const searchValue = document.getElementById('prog-search').value;
+    const cohort = document.getElementById('cohort-select').value;
+    const year = document.getElementById('year-select').value;
+    
+    if (!searchValue || !cohort || !year) {
+        showNotification('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    const progCode = searchValue.split(' - ')[0];
+    
+    showLoading(true);
+    
+    try {
+        const response = await axios.get(`/prog-data/${progCode}/${cohort}/${year}`);
+        const data = response.data;
+        
+        if (!data) {
+            showNotification('Programme not found', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Generate preview HTML
+        const previewHtml = generateProgrammePreview(data, cohort, year);
+        openPreview(previewHtml);
+        
+        showLoading(false);
+    } catch (error) {
+        console.error('Error loading preview:', error);
+        showNotification('Error loading preview', 'error');
+        showLoading(false);
+    }
+});
+
+// Module generate handler
+document.getElementById('mod-generate-btn').addEventListener('click', async () => {
+    const searchValue = document.getElementById('mod-search').value;
+    const year = document.getElementById('mod-year-select').value;
+    const docType = document.getElementById('mod-type-select').value;
+    
+    if (!searchValue || !year) {
+        showNotification('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    const modCode = searchValue.substr(0, 5);
+    
+    showLoading(true);
+    
+    try {
+        const response = await axios.get(`/mod-data/${modCode}/${year}`);
+        const data = response.data;
+        
+        if (!data) {
+            showNotification('Module not found', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Add to recent modules
+        addToRecent('modules', {
+            code: modCode,
+            title: data.title,
+            year: year,
+            credits: data.credits,
+            level: data.level,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Generate document
+        await generateModuleDoc(data, year, docType);
+        
+        showLoading(false);
+        showNotification('Specification generated successfully!', 'success');
+    } catch (error) {
+        console.error('Error generating specification:', error);
+        showNotification('Error generating specification', 'error');
+        showLoading(false);
+    }
+});
+
+// Module preview handler
+document.getElementById('mod-preview-btn').addEventListener('click', async () => {
+    const searchValue = document.getElementById('mod-search').value;
+    const year = document.getElementById('mod-year-select').value;
+    
+    if (!searchValue || !year) {
+        showNotification('Please fill in all fields', 'warning');
+        return;
+    }
+    
+    const modCode = searchValue.substr(0, 5);
+    
+    showLoading(true);
+    
+    try {
+        const response = await axios.get(`/mod-data/${modCode}/${year}`);
+        const data = response.data;
+        
+        if (!data) {
+            showNotification('Module not found', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Generate preview HTML
+        const previewHtml = generateModulePreview(data, year);
+        openPreview(previewHtml);
+        
+        showLoading(false);
+    } catch (error) {
+        console.error('Error loading preview:', error);
+        showNotification('Error loading preview', 'error');
+        showLoading(false);
+    }
+});
+
+// Generate programme preview HTML
+function generateProgrammePreview(data, cohort, year) {
+    return `
+        <div class="space-y-6">
+            <div class="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900 dark:to-primary-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">${data.progTitle}</h2>
+                <p class="text-lg text-gray-700 dark:text-gray-300 mt-2">Programme Code: ${data.progCode}</p>
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <span class="badge badge-primary">Academic Year: ${year}/${parseInt(year) + 1}</span>
+                    <span class="badge badge-success">${cohort === 'cohort' ? 'Cohort' : 'Academic Year'} Specification</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Programme Details</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">College:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.college || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">School:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.school || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Department:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.dept1 || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Award:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.award || 'N/A'}</dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Programme Information</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Mode:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.mode || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Duration:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.duration || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Start Date:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.startDate || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Credits:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.totalCredits || 'N/A'}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            
+            ${data.aims ? `
+            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Programme Aims</h3>
+                <div class="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
+                    ${data.aims}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.learningOutcomes ? `
+            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Learning Outcomes</h3>
+                <div class="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
+                    ${data.learningOutcomes}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.matchedBoolean ? `
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Similar Programmes Found</h3>
+                <ul class="list-disc list-inside text-yellow-700 dark:text-yellow-300">
+                    ${data.matchedProgs.map(prog => `<li>${prog}</li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Generate module preview HTML
+function generateModulePreview(data, year) {
+    return `
+        <div class="space-y-6">
+            <div class="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900 dark:to-primary-800 p-6 rounded-lg">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">${data.title}</h2>
+                <p class="text-lg text-gray-700 dark:text-gray-300 mt-2">Module Code: ${data.code}</p>
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <span class="badge badge-primary">Academic Year: ${year}/${parseInt(year) + 1}</span>
+                    <span class="badge badge-success">${data.credits} Credits</span>
+                    <span class="badge badge-warning">Level ${data.level}</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Module Details</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">School:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.school || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Department:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.dept || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Semester:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.semester || 'N/A'}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Campus:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.campus || 'N/A'}</dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Contact Hours</h3>
+                    <dl class="space-y-2">
+                        ${data.lecture ? `
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Lectures:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.lecture} hours</dd>
+                        </div>
+                        ` : ''}
+                        ${data.seminar ? `
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Seminars:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.seminar} hours</dd>
+                        </div>
+                        ` : ''}
+                        ${data.practical ? `
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Practicals:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.practical} hours</dd>
+                        </div>
+                        ` : ''}
+                        ${data.tutorial ? `
+                        <div class="flex justify-between">
+                            <dt class="text-gray-600 dark:text-gray-400">Tutorials:</dt>
+                            <dd class="text-gray-900 dark:text-gray-100 font-medium">${data.tutorial} hours</dd>
+                        </div>
+                        ` : ''}
+                    </dl>
+                </div>
+            </div>
+            
+            ${data.description ? `
+            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Module Description</h3>
+                <div class="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
+                    ${data.description}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.learningOutcomes ? `
+            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Learning Outcomes</h3>
+                <div class="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
+                    ${data.learningOutcomes}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.assessment ? `
+            <div class="bg-white dark:bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3">Assessment</h3>
+                <div class="text-gray-700 dark:text-gray-300 prose dark:prose-invert max-w-none">
+                    ${data.assessment}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${data.prereqs ? `
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Prerequisites</h3>
+                <p class="text-blue-700 dark:text-blue-300">${data.prereqs}</p>
+            </div>
+            ` : ''}
+            
+            ${data.matchedBoolean ? `
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
+                <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Duplicate Modules Found</h3>
+                <ul class="list-disc list-inside text-yellow-700 dark:text-yellow-300">
+                    ${data.duplicate.map(mod => `<li>${mod}</li>`).join('')}
+                </ul>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Generate programme document (existing functionality)
+async function generateProgrammeDoc(data, cohort, year) {
+    const docPath = cohort === 'cohort' ? `/speccohort${year}.docx` : `/specterm${year}.docx`;
+    
+    return new Promise((resolve, reject) => {
+        loadFile(docPath, function(error, content) {
+            if (error) {
+                reject(error);
+                return;
+            }
+            
+            try {
+                const zip = new PizZip(content);
+                const doc = new window.docxtemplater(zip, {
+                    nullGetter() { return ""; }
+                });
+                
+                doc.setData(data);
+                doc.render();
+                
+                const blob = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+                
+                saveAs(blob, `${data.progCode}_specification.docx`);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
+}
+
+// Generate module document (existing functionality)
+async function generateModuleDoc(data, year, docType) {
+    const docPath = `/module-${docType}.docx`;
+    
+    return new Promise((resolve, reject) => {
+        loadFile(docPath, function(error, content) {
+            if (error) {
+                reject(error);
+                return;
+            }
+            
+            try {
+                const zip = new PizZip(content);
+                const doc = new window.docxtemplater(zip, {
+                    nullGetter() { return ""; }
+                });
+                
+                doc.setData(data);
+                doc.render();
+                
+                const blob = doc.getZip().generate({
+                    type: "blob",
+                    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                });
+                
+                saveAs(blob, `${data.code}_specification.docx`);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
+}
+
+// Utility function to load file
+function loadFile(url, callback) {
+    PizZipUtils.getBinaryContent(url, callback);
+}
+
+// Add to recent items
+function addToRecent(type, item) {
+    const recentList = type === 'programmes' ? recentProgrammes : recentModules;
+    
+    // Remove if already exists
+    const index = recentList.findIndex(i => i.code === item.code);
+    if (index > -1) {
+        recentList.splice(index, 1);
+    }
+    
+    // Add to beginning
+    recentList.unshift(item);
+    
+    // Keep only last 10
+    if (recentList.length > 10) {
+        recentList.pop();
+    }
+    
+    // Save to localStorage
+    localStorage.setItem(type === 'programmes' ? 'recentProgrammes' : 'recentModules', JSON.stringify(recentList));
+}
+
+// Show loading overlay
+function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (show) {
+        overlay.classList.remove('hidden');
+    } else {
+        overlay.classList.add('hidden');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+    };
+    
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-up`;
+    notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+            <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" class="w-5 h-5"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    lucide.createIcons();
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeAutocomplete();
+});

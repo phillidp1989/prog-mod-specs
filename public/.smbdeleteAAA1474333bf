@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University Specification Generator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind.css">
+    
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- jQuery (for compatibility with existing code) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f3f1ff',
+                            100: '#ebe5ff',
+                            200: '#d9ceff',
+                            300: '#bea6ff',
+                            400: '#9f75ff',
+                            500: '#843dff',
+                            600: '#7916ff',
+                            700: '#6b04fd',
+                            800: '#5a03d5',
+                            900: '#4b05ad',
+                            950: '#2c0076',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                            Spec Generator
+                        </h1>
+                    </div>
+                    <nav class="hidden md:ml-10 md:flex space-x-8">
+                        <a href="#" class="text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium transition-colors">
+                            Dashboard
+                        </a>
+                        <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium transition-colors">
+                            History
+                        </a>
+                        <a href="#" class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 px-3 py-2 text-sm font-medium transition-colors">
+                            Favorites
+                        </a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Dark mode toggle -->
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i data-lucide="sun" class="w-5 h-5 text-gray-600 dark:text-gray-400 dark:hidden"></i>
+                        <i data-lucide="moon" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden dark:block"></i>
+                    </button>
+                    
+                    <!-- User menu -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                U
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Programmes</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">1,247</p>
+                    </div>
+                    <div class="p-3 bg-primary-100 dark:bg-primary-900 rounded-lg">
+                        <i data-lucide="graduation-cap" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Modules</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">3,892</p>
+                    </div>
+                    <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                        <i data-lucide="book-open" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Generated Today</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">47</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                        <i data-lucide="file-text" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Recent Updates</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">12</p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                        <i data-lucide="refresh-cw" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm" x-data="{ activeTab: 'programmes' }">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex -mb-px">
+                    <button 
+                        @click="activeTab = 'programmes'"
+                        :class="activeTab === 'programmes' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                        <span>Programmes</span>
+                    </button>
+                    <button 
+                        @click="activeTab = 'modules'"
+                        :class="activeTab === 'modules' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Modules</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Programme Tab Content -->
+            <div x-show="activeTab === 'programmes'" class="p-6">
+                <div class="space-y-6">
+                    <!-- Search and Filters -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="lg:col-span-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Search Programme
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="prog-search"
+                                    placeholder="Enter programme code or title..."
+                                    class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
+                                />
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Spec Type
+                            </label>
+                            <select id="cohort-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose type</option>
+                                <option value="cohort">Cohort Spec</option>
+                                <option value="term">Academic Year Spec</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Academic Year
+                            </label>
+                            <select id="year-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose year</option>
+                                <option value="2024">2024/25</option>
+                                <option value="2025">2025/26</option>
+                                <option value="2026">2026/27</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2 flex items-end">
+                            <button class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                                <i data-lucide="filter" class="w-4 h-4"></i>
+                                <span>More Filters</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-3">
+                        <button id="prog-preview-btn" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>Preview</span>
+                        </button>
+                        <button id="prog-generate-btn" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Generate Spec</span>
+                        </button>
+                        <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                            <span>Export to Excel</span>
+                        </button>
+                        <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            <span>Export to PDF</span>
+                        </button>
+                    </div>
+
+                    <!-- Recent Programmes -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recently Accessed</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">BSc Computer Science</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">CS101 - Full-time</p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                                2024/25
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                Cohort
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                                        <i data-lucide="star" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">MEng Software Engineering</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">SE201 - Full-time</p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                                2025/26
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                Term
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                                        <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-current"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">MSc Data Science</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">DS301 - Part-time</p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                                2024/25
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                Cohort
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                                        <i data-lucide="star" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Tab Content -->
+            <div x-show="activeTab === 'modules'" class="p-6" style="display: none;">
+                <div class="space-y-6">
+                    <!-- Search and Filters -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="lg:col-span-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Search Module
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="mod-search"
+                                    placeholder="Enter module code or title..."
+                                    class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
+                                />
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Academic Year
+                            </label>
+                            <select id="mod-year-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose year</option>
+                                <option value="2024">2024/25</option>
+                                <option value="2025">2025/26</option>
+                                <option value="2026">2026/27</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Document Type
+                            </label>
+                            <select id="mod-type-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="spec">Spec only</option>
+                                <option value="spec+">Spec & modification</option>
+                                <option value="wd">Withdrawal form</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2 flex items-end">
+                            <button class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                                <i data-lucide="filter" class="w-4 h-4"></i>
+                                <span>More Filters</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap gap-3">
+                        <button id="mod-preview-btn" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>Preview</span>
+                        </button>
+                        <button id="mod-generate-btn" class="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg flex items-center space-x-2">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Generate Spec</span>
+                        </button>
+                        <button class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                            <span>Export to Excel</span>
+                        </button>
+                        <button class="bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            <span>Export to PDF</span>
+                        </button>
+                    </div>
+
+                    <!-- Recent Modules -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recently Accessed</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-gray-100">Advanced Algorithms</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">06-30175</p>
+                                        <div class="flex space-x-2 mt-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                                20 credits
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                Level M
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded">
+                                        <i data-lucide="star" class="w-4 h-4 text-gray-400"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-lg bg-white dark:bg-gray-800">
+                <div class="mt-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Specification Preview</h3>
+                        <button onclick="closePreview()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div id="previewContent" class="max-h-96 overflow-y-auto">
+                        <!-- Preview content will be inserted here -->
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-4">
+                        <button onclick="closePreview()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                            Close
+                        </button>
+                        <button class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                            Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600"></div>
+            <p class="mt-4 text-gray-700 dark:text-gray-300">Generating specification...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.19.7/docxtemplater.js"></script>
+    <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>
+    <script src="modern-app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+            lucide.createIcons();
+        });
+        
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+        
+        // Preview functions
+        function openPreview(content) {
+            document.getElementById('previewContent').innerHTML = content;
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+        
+        function closePreview() {
+            document.getElementById('previewModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

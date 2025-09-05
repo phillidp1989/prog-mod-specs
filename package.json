@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build-css": "npx tailwindcss -i ./public/tailwind.css -o ./public/style-modern.css --watch",
+    "build-css-prod": "npx tailwindcss -i ./public/tailwind.css -o ./public/style-modern.css --minify"
   },
   "keywords": [],
   "author": "",
