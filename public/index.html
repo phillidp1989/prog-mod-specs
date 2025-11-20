@@ -1,250 +1,2387 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
+<html lang="en" class="">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Programme Specs</title>
-    <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <!-- Materialize -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <!-- Icons -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <div class="row">
-      <div class="col s12 tab-row">
-        <ul id="tabs-swipe-demo" class="tabs">
-          <li class="tab col s6">
-            <a class="active purple-text text-darken-2" href="#prog-content"
-              >Programmes</a
-            >
-          </li>
-          <li class="tab col s6">
-            <a class="purple-text text-darken-2" href="#module-content"
-              >Modules</a
-            >
-          </li>
-        </ul>
-      </div>
-    </div>
-    <div id="prog-content" class="row">
-      <div class="col s1 m2 l3"></div>
-      <div class="z-depth-4 form-card blue-grey lighten-5 col s10 m8 l6">
-        <div class="row header">
-          <div class="col s12">
-            <h4>Programme Spec Generator</h4>
-          </div>
+    <title>University Specification Generator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind.css">
+    
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- jQuery (for compatibility with existing code) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f3f1ff',
+                            100: '#ebe5ff',
+                            200: '#d9ceff',
+                            300: '#bea6ff',
+                            400: '#9f75ff',
+                            500: '#843dff',
+                            600: '#7916ff',
+                            700: '#6b04fd',
+                            800: '#5a03d5',
+                            900: '#4b05ad',
+                            950: '#2c0076',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Micro-Interactions CSS -->
+    <style>
+        /* Spring animation on button clicks */
+        .btn-spring:active {
+            transform: scale(0.95);
+            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Smooth hover effects with bounce */
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Ripple effect container */
+        .ripple-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ripple animation */
+        @keyframes ripple {
+            0% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            animation: ripple 0.6s ease-out;
+        }
+
+        /* Enhanced focus states with glow */
+        .focus-glow:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+            transition: box-shadow 0.2s ease;
+        }
+
+        /* Smooth card hover lift */
+        .card-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Pulse animation for loading states */
+        @keyframes pulse-soft {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .pulse-soft {
+            animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Smooth icon transitions */
+        .icon-transition {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .icon-transition:hover {
+            transform: rotate(5deg) scale(1.1);
+        }
+
+        /* Shimmer effect for loading */
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Catalogue card expansion styles */
+        .catalogue-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* Focus states for accessibility */
+        .catalogue-card:focus-visible {
+            outline: 3px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .catalogue-card-expanded {
+            z-index: 10;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            grid-column: span 1;
+            transition: box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (min-width: 768px) {
+            .catalogue-card-expanded {
+                grid-column: span 2;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .catalogue-card-expanded {
+                grid-column: span 3;
+            }
+        }
+
+        .catalogue-card-content {
+            transition: opacity 0.6s ease;
+        }
+
+        .catalogue-card-expanded-content {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Respect user's reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            .catalogue-card {
+                transition: none;
+            }
+        }
+
+        /* Driver.js custom styling to match our theme */
+        .driver-popover {
+            background-color: var(--tw-prose-body);
+        }
+
+        .dark .driver-popover {
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .driver-popover-title {
+            color: #7916ff;
+        }
+
+        .dark .driver-popover-title {
+            color: #9f75ff;
+        }
+
+        .driver-popover-description {
+            color: #4b5563;
+        }
+
+        .dark .driver-popover-description {
+            color: #d1d5db;
+        }
+
+        .driver-popover-next-btn,
+        .driver-popover-prev-btn {
+            background-color: #7916ff;
+            color: white;
+        }
+
+        .driver-popover-next-btn:hover,
+        .driver-popover-prev-btn:hover {
+            background-color: #6b04fd;
+        }
+
+        .dark .driver-popover-next-btn,
+        .dark .driver-popover-prev-btn {
+            background-color: #843dff;
+        }
+
+        .dark .driver-popover-next-btn:hover,
+        .dark .driver-popover-prev-btn:hover {
+            background-color: #9f75ff;
+        }
+            .catalogue-card-expanded {
+                transition: none;
+            }
+            .catalogue-card-content {
+                transition: none;
+            }
+            .catalogue-card-expanded-content {
+                animation: none;
+            }
+            .card-lift:hover {
+                transition: none;
+                transform: none;
+            }
+        }
+
+        /* Loading state for cards - removed fixed spinner, will use skeleton instead */
+        .catalogue-card-loading {
+            opacity: 0.95;
+            pointer-events: none;
+            position: relative;
+        }
+
+        /* College/School color variables */
+        :root {
+            --college-engineering: #3b82f6;
+            --college-life-env: #10b981;
+            --college-social: #f59e0b;
+            --college-arts: #8b5cf6;
+            --college-medicine: #ef4444;
+            --college-medicine-dental: #ec4899;
+            --college-corporate: #6b7280;
+            --college-default: #6b7280;
+        }
+
+        /* Line clamp utilities for text truncation */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* View Transition API - Smooth morphing for card expansion and tessellation */
+        /* Root transition (page-level, keep fast) */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation-duration: 0.3s;
+        }
+
+        /* Individual card transitions - smooth expansion/tessellation */
+        /* Browser automatically animates position, size, and opacity changes */
+        ::view-transition-old(*),
+        ::view-transition-new(*) {
+            animation-duration: 0.4s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Card group animations (handles position + size changes together) */
+        ::view-transition-group(*) {
+            animation-duration: 0.4s;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Accessibility: Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            ::view-transition-old(*),
+            ::view-transition-new(*),
+            ::view-transition-group(*) {
+                animation-duration: 0.01s;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
+                            Spec Generator
+                        </h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Help button -->
+                    <button id="helpButton"
+                            onclick="window.showWhatsNew()"
+                            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            aria-label="Help and What's New"
+                            title="Help and What's New">
+                        <i data-lucide="help-circle" class="w-5 h-5 text-gray-600 dark:text-gray-400"></i>
+                    </button>
+                    <!-- Dark mode toggle -->
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            aria-label="Toggle dark mode"
+                            aria-pressed="false"
+                            title="Toggle dark mode">
+                        <i data-lucide="sun" class="w-5 h-5 text-gray-600 dark:text-gray-400 dark:hidden"></i>
+                        <i data-lucide="moon" class="w-5 h-5 text-gray-600 dark:text-gray-400 hidden dark:block"></i>
+                    </button>
+
+                    <!-- User menu -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                            <div class="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                U
+                            </div>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="row autocomplete-container">
-          <div class="prog-initializer">
-            <div class="lds-dual-ring"></div>
-            <h5 class="purple-text text-darken-2">Loading programmes</h5>
-          </div>
-          <div class="col s12 form-content hide">
-            <div class="row input-container">
-              <div class="input-field col s11 m9">
-                <i class="material-icons prefix">search</i>
-                <input
-                  type="text"
-                  id="autocomplete-input"
-                  class="autocomplete"
-                />
-                <label for="autocomplete-input"
-                  >Search for a programme code or title</label
-                >
-              </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tabs -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm" x-data="{ activeTab: 'programmes' }">
+            <div class="border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex -mb-px">
+                    <button 
+                        @click="activeTab = 'programmes'"
+                        :class="activeTab === 'programmes' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                        <span>Programmes</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'modules'"
+                        :class="activeTab === 'modules' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Modules</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'analytics'"
+                        :class="activeTab === 'analytics' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                        <span>Analytics</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'catalogue'"
+                        :class="activeTab === 'catalogue' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="grid" class="w-4 h-4"></i>
+                        <span>Catalogue</span>
+                    </button>
+                </nav>
             </div>
-            <div class="row">
-              <div class="col s12 dropdown-container">
-                <div class="input-field col s12 m6">
-                  <select id="cohort">
-                    <option value="" disabled selected>
-                      Choose your option
-                    </option>
-                    <option value="cohort">Cohort Spec</option>
-                    <option value="term">Academic Year Spec</option>
-                  </select>
-                  <label>Cohort or Academic Year Spec</label>
+
+            <!-- Programme Tab Content -->
+            <div x-show="activeTab === 'programmes'" class="p-8">
+                <div class="space-y-8">
+                    <!-- Hero Section -->
+                    <div class="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-xl p-8 border border-primary-200 dark:border-primary-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                                    Programme Specification Generator
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Search for a programme, select options, and generate your specification document
+                                </p>
+                            </div>
+                            <div class="hidden md:block">
+                                <i data-lucide="graduation-cap" class="w-16 h-16 text-primary-400 dark:text-primary-600 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                    <i data-lucide="database" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Total Programmes</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100" id="progCount">3000+</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                    <i data-lucide="calendar" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Academic Years</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100">2024/25 - 2026/27</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                                    <i data-lucide="file-text" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Spec Types</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100">Cohort & Term</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filters Card -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                            <i data-lucide="search" class="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400"></i>
+                            Search & Filter Options
+                        </h3>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <div class="lg:col-span-6">
+                                <label for="prog-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Search Programme
+                                </label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="prog-search"
+                                    placeholder="Enter programme code or title..."
+                                    class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
+                                    role="combobox"
+                                    aria-label="Search for programme"
+                                    aria-autocomplete="list"
+                                    aria-expanded="false"
+                                    aria-controls="prog-search-dropdown"
+                                    disabled
+                                />
+                                <!-- Skeleton loader - subtle indicator -->
+                                <div id="prog-search-skeleton" class="absolute right-4 top-3.5 flex items-center space-x-2 animate-pulse">
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                                </div>
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" aria-hidden="true"></i>
+                            </div>
+                            <!-- Autocomplete dropdown container -->
+                            <div id="prog-search-dropdown" class="hidden" role="listbox"></div>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Spec Type
+                            </label>
+                            <select id="cohort-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose type</option>
+                                <option value="cohort">Cohort Spec</option>
+                                <option value="term">Academic Year Spec</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Academic Year
+                            </label>
+                            <select id="year-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose year</option>
+                                <option value="2024">2024/25</option>
+                                <option value="2025">2025/26</option>
+                                <option value="2026">2026/27</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2 flex items-end">
+                            <button onclick="openProgrammeFilters()" id="prog-filter-btn" class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                                <i data-lucide="filter" class="w-4 h-4"></i>
+                                <span>More Filters</span>
+                                <span id="prog-filter-count" class="hidden ml-2 bg-primary-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <div id="prog-active-filters" class="hidden flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"></div>
                 </div>
-                <div class="input-field col s12 m6">
-                  <select id="year">
-                    <option value="" disabled selected>
-                      Choose your option
-                    </option>                                                                                
-                    <option value="2024">2024/25</option>
-                    <option value="2025">2025/26</option>
-                    <option value="2026">2026/27</option>
-                  </select>
-                  <label>Select Academic Year</label>
+
+                <!-- Empty State (shown when no search performed) -->
+                <div id="prog-empty-state" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12">
+                    <div class="flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
+                        <!-- Icon -->
+                        <div class="w-24 h-24 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center mb-6">
+                            <i data-lucide="graduation-cap" class="w-12 h-12 text-primary-600 dark:text-primary-400"></i>
+                        </div>
+
+                        <!-- Heading -->
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                            Start Your Programme Search
+                        </h3>
+
+                        <!-- Description -->
+                        <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                            Enter a programme code or title in the search box above to begin. Select the cohort, academic year, and document type to generate your specification.
+                        </p>
+
+                        <!-- Example searches -->
+                        <div class="flex flex-col items-center gap-3">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Try searching for:</p>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    BSc Computer Science
+                                </span>
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    3041
+                                </span>
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    MEng Engineering
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
+
+                    <!-- Enhanced Action Section -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 border-2 border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div class="text-center md:text-left">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center justify-center md:justify-start">
+                                    <i data-lucide="zap" class="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400"></i>
+                                    Ready to Generate?
+                                </h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Preview your specification or download it directly
+                                </p>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                <button id="prog-preview-btn" class="w-full sm:w-auto border-2 border-primary-600 dark:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 btn-spring btn-hover focus-glow">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                    <span>Preview First</span>
+                                </button>
+                                <button id="prog-generate-btn" class="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 btn-spring focus-glow text-lg ripple-container">
+                                    <i data-lucide="download" class="w-5 h-5"></i>
+                                    <span>Generate Specification</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="row">
-              <div class="col s12 btn-col">
-                <a
-                  class="waves-effect waves-light btn deep-purple darken-2"
-                  id="generate-btn"
-                  ><i class="material-icons right">file_download</i>Generate
-                  Spec</a
-                >
-                <div class="loading hide">
-                  <div class="lds-roller">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                  <p class="loading-text purple-text text-darken-2">
-                    Generating Spec
-                  </p>
+
+            <!-- Module Tab Content -->
+            <div x-show="activeTab === 'modules'" class="p-8" style="display: none;">
+                <div class="space-y-8">
+                    <!-- Hero Section -->
+                    <div class="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 rounded-xl p-8 border border-primary-200 dark:border-primary-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                                    Module Specification Generator
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Search for a module, select options, and generate your specification document
+                                </p>
+                            </div>
+                            <div class="hidden md:block">
+                                <i data-lucide="book-open" class="w-16 h-16 text-primary-400 dark:text-primary-600 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                    <i data-lucide="layers" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Total Modules</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100" id="modCount">7000+</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                    <i data-lucide="calendar" class="w-5 h-5 text-green-600 dark:text-green-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Academic Years</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100">2024/25 - 2026/27</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                                    <i data-lucide="file-type" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Document Types</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-gray-100">Spec & WD</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filters Card -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                            <i data-lucide="search" class="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400"></i>
+                            Search & Filter Options
+                        </h3>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <div class="lg:col-span-6">
+                                <label for="mod-search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Search Module
+                                </label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="mod-search"
+                                    placeholder="Enter module code or title..."
+                                    class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
+                                    role="combobox"
+                                    aria-label="Search for module"
+                                    aria-autocomplete="list"
+                                    aria-expanded="false"
+                                    aria-controls="mod-search-dropdown"
+                                    disabled
+                                />
+                                <!-- Skeleton loader - subtle indicator -->
+                                <div id="mod-search-skeleton" class="absolute right-4 top-3.5 flex items-center space-x-2 animate-pulse">
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                    <div class="h-2 w-2 bg-primary-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                                </div>
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" aria-hidden="true"></i>
+                            </div>
+                            <!-- Autocomplete dropdown container -->
+                            <div id="mod-search-dropdown" class="hidden" role="listbox"></div>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Academic Year
+                            </label>
+                            <select id="mod-year-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="">Choose year</option>
+                                <option value="2024">2024/25</option>
+                                <option value="2025">2025/26</option>
+                                <option value="2026">2026/27</option>
+                            </select>
+                        </div>
+                        
+                        <div class="lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Document Type
+                            </label>
+                            <select id="mod-type-select" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                <option value="spec">Spec only</option>
+                                <option value="spec+">Spec & modification</option>
+                                <option value="wd">Withdrawal form</option>
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-2 flex items-end">
+                            <button onclick="openModuleFilters()" id="mod-filter-btn" class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                                <i data-lucide="filter" class="w-4 h-4"></i>
+                                <span>More Filters</span>
+                                <span id="mod-filter-count" class="hidden ml-2 bg-primary-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <div id="mod-active-filters" class="hidden flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"></div>
                 </div>
-              </div>
+
+                <!-- Empty State (shown when no search performed) -->
+                <div id="mod-empty-state" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12">
+                    <div class="flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
+                        <!-- Icon -->
+                        <div class="w-24 h-24 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 rounded-full flex items-center justify-center mb-6">
+                            <i data-lucide="book-open" class="w-12 h-12 text-primary-600 dark:text-primary-400"></i>
+                        </div>
+
+                        <!-- Heading -->
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                            Start Your Module Search
+                        </h3>
+
+                        <!-- Description -->
+                        <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
+                            Enter a module code or title in the search box above to begin. Select the academic year and document type to generate your specification.
+                        </p>
+
+                        <!-- Example searches -->
+                        <div class="flex flex-col items-center gap-3">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Try searching for:</p>
+                            <div class="flex flex-wrap gap-2 justify-center">
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    41822
+                                </span>
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    Introduction to Programming
+                                </span>
+                                <span class="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium">
+                                    06 12345
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- Enhanced Action Section -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8 border-2 border-dashed border-gray-300 dark:border-gray-600">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div class="text-center md:text-left">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center justify-center md:justify-start">
+                                    <i data-lucide="zap" class="w-5 h-5 mr-2 text-primary-600 dark:text-primary-400"></i>
+                                    Ready to Generate?
+                                </h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                    Preview your specification or download it directly
+                                </p>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                <button id="mod-preview-btn" class="w-full sm:w-auto border-2 border-primary-600 dark:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 btn-spring btn-hover focus-glow">
+                                    <i data-lucide="eye" class="w-5 h-5"></i>
+                                    <span>Preview First</span>
+                                </button>
+                                <button id="mod-generate-btn" class="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 btn-spring focus-glow text-lg ripple-container">
+                                    <i data-lucide="download" class="w-5 h-5"></i>
+                                    <span>Generate Specification</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+
+            <!-- Analytics Tab Content -->
+            <div x-show="activeTab === 'analytics'" class="p-6" style="display: none;">
+                <div class="space-y-6">
+                    <!-- Analytics Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Analytics & Statistics</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View insights and trends for programme and module specifications</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Programmes</p>
+                                    <p id="stat-total-programmes" class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                        <span class="inline-block animate-pulse">...</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-primary-100 dark:bg-primary-900 rounded-lg">
+                                    <i data-lucide="graduation-cap" class="w-6 h-6 text-primary-600 dark:text-primary-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Modules</p>
+                                    <p id="stat-total-modules" class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                        <span class="inline-block animate-pulse">...</span>
+                                    </p>
+                                </div>
+                                <div class="p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                                    <i data-lucide="book-open" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Generated Today</p>
+                                    <p id="stat-generated-today" class="text-2xl font-bold text-gray-900 dark:text-gray-100">0</p>
+                                </div>
+                                <div class="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                    <i data-lucide="file-text" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 hover:shadow-lg transition-shadow border border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Recent Updates (7 days)</p>
+                                    <p id="stat-recent-updates" class="text-2xl font-bold text-gray-900 dark:text-gray-100">0</p>
+                                </div>
+                                <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                                    <i data-lucide="refresh-cw" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Charts with Tabs -->
+                    <div x-data="{ analyticsTab: 'usage' }" class="mt-6">
+                        <!-- Tab Navigation -->
+                        <div class="mt-6">
+                            <nav class="flex gap-2" aria-label="Analytics tabs">
+                                <button @click="analyticsTab = 'modules'; switchAnalyticsTab('modules')"
+                                        :class="analyticsTab === 'modules' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                        class="whitespace-nowrap rounded-full px-4 py-2 font-medium text-sm transition-colors">
+                                    <i data-lucide="book-open" class="w-4 h-4 inline mr-2"></i>
+                                    Module Analytics
+                                </button>
+                                <button @click="analyticsTab = 'programmes'; switchAnalyticsTab('programmes')"
+                                        :class="analyticsTab === 'programmes' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                        class="whitespace-nowrap rounded-full px-4 py-2 font-medium text-sm transition-colors">
+                                    <i data-lucide="graduation-cap" class="w-4 h-4 inline mr-2"></i>
+                                    Programme Analytics
+                                </button>
+                                <button @click="analyticsTab = 'usage'; switchAnalyticsTab('usage')"
+                                        :class="analyticsTab === 'usage' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                        class="whitespace-nowrap rounded-full px-4 py-2 font-medium text-sm transition-colors">
+                                    <i data-lucide="activity" class="w-4 h-4 inline mr-2"></i>
+                                    Generator Usage
+                                </button>
+                            </nav>
+                        </div>
+
+                        <!-- Tab Panels -->
+                        <div class="mt-6">
+                            <!-- Modules Tab -->
+                            <div x-show="analyticsTab === 'modules'" id="modules-tab" style="display: none;" x-data="{ selectedColleges: [], allColleges: [], creditSelectedLevel: '', creditSelectedCollege: '' }">
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <!-- Module Distribution Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Distribution by Level</h3>
+                                        </div>
+                                        <div class="relative h-64">
+                                            <canvas id="moduleChart"></canvas>
+                                            <!-- Doughnut skeleton -->
+                                            <div id="moduleChart-skeleton" class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800">
+                                                <div class="w-48 h-48 rounded-full border-8 border-gray-200 dark:border-gray-700 border-t-gray-300 dark:border-t-gray-600 animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Module Credits Distribution Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Credits Distribution</h3>
+                                        </div>
+
+                                        <!-- Filters -->
+                                        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <!-- Level Filter -->
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        <i data-lucide="layers" class="w-3 h-3 inline mr-1"></i>
+                                                        Level
+                                                    </label>
+                                                    <select x-model="creditSelectedLevel"
+                                                            @change="window.updateCreditsChart()"
+                                                            class="w-full text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                                        <option value="">All Levels</option>
+                                                        <option value="C">C (Certificate)</option>
+                                                        <option value="I">I (Intermediate)</option>
+                                                        <option value="H">H (Honours)</option>
+                                                        <option value="M">M (Masters)</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- College Filter -->
+                                                <div>
+                                                    <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        <i data-lucide="building-2" class="w-3 h-3 inline mr-1"></i>
+                                                        College
+                                                    </label>
+                                                    <select x-model="creditSelectedCollege"
+                                                            @change="window.updateCreditsChart()"
+                                                            class="w-full text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                                        <option value="">All Colleges</option>
+                                                        <template x-for="college in allColleges" :key="college">
+                                                            <option :value="college" x-text="college"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="relative h-64">
+                                            <canvas id="creditsChart"></canvas>
+                                            <!-- Column chart skeleton -->
+                                            <div id="creditsChart-skeleton" class="absolute inset-0 flex items-end justify-around px-6 pb-6 gap-2 bg-white dark:bg-gray-800">
+                                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse" style="height: 80%"></div>
+                                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse" style="height: 60%"></div>
+                                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse" style="height: 90%"></div>
+                                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse" style="height: 70%"></div>
+                                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse" style="height: 85%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- School Activity Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Count by School</h3>
+                                        </div>
+
+                                        <!-- College Filter -->
+                                        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <details class="group">
+                                                <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 list-none flex items-center justify-between">
+                                                    <span class="flex items-center">
+                                                        <i data-lucide="filter" class="w-4 h-4 mr-2"></i>
+                                                        Filter by College
+                                                    </span>
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400" x-text="selectedColleges.length === 0 ? 'All Colleges' : `${selectedColleges.length} selected`"></span>
+                                                </summary>
+                                                <div class="mt-3 max-h-48 overflow-y-auto space-y-2">
+                                                    <!-- All Colleges checkbox -->
+                                                    <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
+                                                        <input type="checkbox"
+                                                               :checked="selectedColleges.length === 0"
+                                                               @change="selectedColleges = []; window.updateSchoolChart()"
+                                                               class="rounded text-primary-600 focus:ring-primary-500">
+                                                        <span class="font-medium">All Colleges</span>
+                                                    </label>
+
+                                                    <!-- Individual colleges -->
+                                                    <template x-for="college in allColleges" :key="college">
+                                                        <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
+                                                            <input type="checkbox"
+                                                                   :value="college"
+                                                                   x-model="selectedColleges"
+                                                                   @change="window.updateSchoolChart()"
+                                                                   class="rounded text-primary-600 focus:ring-primary-500">
+                                                            <span x-text="college"></span>
+                                                        </label>
+                                                    </template>
+                                                </div>
+                                            </details>
+                                        </div>
+
+                                        <div class="relative h-96">
+                                            <canvas id="schoolChart"></canvas>
+                                            <!-- Horizontal bar skeleton -->
+                                            <div id="schoolChart-skeleton" class="absolute inset-0 flex flex-col justify-around py-6 pl-6 pr-12 bg-white dark:bg-gray-800 space-y-3">
+                                                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 85%"></div>
+                                                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 70%"></div>
+                                                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 60%"></div>
+                                                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 90%"></div>
+                                                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 75%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Programmes Tab -->
+                            <div x-show="analyticsTab === 'programmes'" id="programmes-tab" style="display: none;" x-data="{ degreeLevel: 'all' }">
+                                <div class="grid grid-cols-1 gap-6">
+                                    <!-- College and Campus Distribution Charts -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <!-- College Distribution Chart -->
+                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Programmes by College</h3>
+                                            <div class="relative h-80">
+                                                <canvas id="progCollegeChart"></canvas>
+                                                <!-- Horizontal bar skeleton -->
+                                                <div id="progCollegeChart-skeleton" class="absolute inset-0 flex flex-col justify-around py-6 pl-6 pr-12 bg-white dark:bg-gray-800 space-y-3">
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 90%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 75%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 85%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 65%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 80%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Campus Distribution Chart -->
+                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Programmes by Campus</h3>
+                                            <div class="relative h-80">
+                                                <canvas id="progCampusChart"></canvas>
+                                                <!-- Doughnut skeleton -->
+                                                <div id="progCampusChart-skeleton" class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800">
+                                                    <div class="w-48 h-48 rounded-full border-8 border-gray-200 dark:border-gray-700 border-t-gray-300 dark:border-t-gray-600 animate-pulse"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Degree Types Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top 15 Programme Degree Types</h3>
+                                        </div>
+
+                                        <!-- UG/PG Level Filter -->
+                                        <div class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <div class="flex items-center space-x-4">
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                                                    <i data-lucide="filter" class="w-4 h-4 mr-2"></i>
+                                                    Level:
+                                                </span>
+                                                <div class="flex flex-wrap gap-3">
+                                                    <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                                                        <input type="radio"
+                                                               value="all"
+                                                               x-model="degreeLevel"
+                                                               @change="window.updateDegreeTypesChart()"
+                                                               class="text-primary-600 focus:ring-primary-500">
+                                                        <span>All</span>
+                                                    </label>
+                                                    <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                                                        <input type="radio"
+                                                               value="ug"
+                                                               x-model="degreeLevel"
+                                                               @change="window.updateDegreeTypesChart()"
+                                                               class="text-primary-600 focus:ring-primary-500">
+                                                        <span>Undergraduate</span>
+                                                    </label>
+                                                    <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                                                        <input type="radio"
+                                                               value="pg"
+                                                               x-model="degreeLevel"
+                                                               @change="window.updateDegreeTypesChart()"
+                                                               class="text-primary-600 focus:ring-primary-500">
+                                                        <span>Postgraduate</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="relative h-96">
+                                            <canvas id="degreeTypesChart"></canvas>
+                                            <!-- Horizontal bar skeleton -->
+                                            <div id="degreeTypesChart-skeleton" class="absolute inset-0 flex flex-col justify-around py-6 pl-6 pr-12 bg-white dark:bg-gray-800 space-y-2">
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 85%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 70%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 92%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 60%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 78%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 88%"></div>
+                                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 65%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Usage Tab -->
+                            <div x-show="analyticsTab === 'usage'" id="usage-tab" style="display: none;"
+                                 x-data="{
+                                     usageType: 'all',
+                                     selectedCollege: '',
+                                     selectedSchool: '',
+                                     startDate: '',
+                                     endDate: '',
+                                     allColleges: [],
+                                     allSchools: []
+                                 }">
+
+                                <!-- Summary Cards - Compact Style -->
+                                <div class="flex flex-wrap gap-3 mt-8 mb-6">
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center gap-3">
+                                            <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                                                <i data-lucide="file-text" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600 dark:text-gray-400">Total All-Time</p>
+                                                <p class="text-lg font-bold text-gray-900 dark:text-gray-100" id="total-all-time">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center gap-3">
+                                            <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                                                <i data-lucide="calendar" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600 dark:text-gray-400">Last 30 Days</p>
+                                                <p class="text-lg font-bold text-gray-900 dark:text-gray-100" id="last-30-days">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center gap-3">
+                                            <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                                                <i data-lucide="trending-up" class="w-4 h-4 text-green-600 dark:text-green-400"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600 dark:text-gray-400">Last 7 Days</p>
+                                                <p class="text-lg font-bold text-gray-900 dark:text-gray-100" id="last-7-days">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
+                                        <div class="flex items-center gap-3">
+                                            <div class="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                                                <i data-lucide="pie-chart" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600 dark:text-gray-400">Programmes/Modules</p>
+                                                <p class="text-lg font-bold text-gray-900 dark:text-gray-100" id="prog-mod-ratio">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Filters Section -->
+                                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6">
+                                    <details class="group">
+                                        <summary class="cursor-pointer list-none flex items-center justify-between">
+                                            <div class="flex items-center space-x-2">
+                                                <i data-lucide="filter" class="w-5 h-5 text-gray-500"></i>
+                                                <span class="font-medium text-gray-900 dark:text-gray-100">Advanced Filters</span>
+                                            </div>
+                                            <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform"></i>
+                                        </summary>
+
+                                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                                                <select x-model="usageType" @change="window.updateUsageCharts()"
+                                                        class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
+                                                    <option value="all">All</option>
+                                                    <option value="prog">Programmes</option>
+                                                    <option value="mod">Modules</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">College</label>
+                                                <select x-model="selectedCollege" @change="window.updateUsageCharts()"
+                                                        class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
+                                                    <option value="">All Colleges</option>
+                                                    <template x-for="college in allColleges" :key="college">
+                                                        <option :value="college" x-text="college"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">School</label>
+                                                <select x-model="selectedSchool" @change="window.updateUsageCharts()"
+                                                        class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg">
+                                                    <option value="">All Schools</option>
+                                                    <template x-for="school in allSchools" :key="school">
+                                                        <option :value="school" x-text="school"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Actions</label>
+                                                <button @click="usageType='all'; selectedCollege=''; selectedSchool=''; startDate=''; endDate=''; window.updateUsageCharts();"
+                                                        class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                                    Reset Filters
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+
+                                <!-- Charts -->
+                                <div class="grid grid-cols-1 gap-6">
+                                    <!-- Monthly Trend Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Monthly Trend</h3>
+                                        <div class="relative h-72">
+                                            <canvas id="monthlyTrendChart"></canvas>
+                                            <!-- Line chart skeleton -->
+                                            <div id="monthlyTrendChart-skeleton" class="absolute inset-0 bg-white dark:bg-gray-800">
+                                                <svg class="w-full h-full p-6" viewBox="0 0 400 200" preserveAspectRatio="none">
+                                                    <polyline points="0,150 50,120 100,140 150,80 200,100 250,60 300,90 350,50 400,70"
+                                                              fill="none" stroke="currentColor" stroke-width="2"
+                                                              class="text-gray-200 dark:text-gray-700 animate-pulse" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- College and School Charts -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Specs Generated by College</h3>
+                                            <div class="relative h-80">
+                                                <canvas id="collegeUsageChart"></canvas>
+                                                <!-- Horizontal bar skeleton -->
+                                                <div id="collegeUsageChart-skeleton" class="absolute inset-0 flex flex-col justify-around py-6 pl-6 pr-12 bg-white dark:bg-gray-800 space-y-3">
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 90%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 75%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 85%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 65%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 80%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Specs Generated by School</h3>
+                                            <div class="relative h-80">
+                                                <canvas id="schoolUsageChart"></canvas>
+                                                <!-- Horizontal bar skeleton -->
+                                                <div id="schoolUsageChart-skeleton" class="absolute inset-0 flex flex-col justify-around py-6 pl-6 pr-12 bg-white dark:bg-gray-800 space-y-3">
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 85%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 70%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 90%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 60%"></div>
+                                                    <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" style="width: 75%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Generation Activity Chart -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Generation Activity (Last 7 Days)</h3>
+                                            <button onclick="refreshCharts()" class="text-sm text-primary-600 dark:text-primary-400 hover:underline">
+                                                <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> Refresh
+                                            </button>
+                                        </div>
+                                        <div class="relative h-64">
+                                            <canvas id="activityChart"></canvas>
+                                            <!-- Line chart skeleton -->
+                                            <div id="activityChart-skeleton" class="absolute inset-0 bg-white dark:bg-gray-800">
+                                                <svg class="w-full h-full p-6" viewBox="0 0 400 200" preserveAspectRatio="none">
+                                                    <polyline points="0,180 50,160 100,170 150,140 200,150 250,120 300,130 350,110 400,120"
+                                                              fill="none" stroke="currentColor" stroke-width="2"
+                                                              class="text-gray-200 dark:text-gray-700 animate-pulse" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Catalogue Tab Content -->
+            <div x-show="activeTab === 'catalogue'"
+                 x-init="$watch('activeTab', value => { if (value === 'catalogue' && !window._catalogueInitialized) { window._catalogueInitialized = true; window.initializeCatalogue('programmes'); } })"
+                 class="p-6"
+                 style="display: none;"
+                 x-data="{ catalogueType: 'programmes' }">
+                <div class="space-y-6">
+                    <!-- Catalogue Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Browse Catalogue</h2>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Explore and filter programmes and modules</p>
+                        </div>
+                    </div>
+
+                    <!-- Sub-tabs for Programmes/Modules -->
+                    <div class="flex space-x-2 mb-6">
+                        <button @click="catalogueType = 'programmes'; window.initializeCatalogue('programmes')"
+                                :class="catalogueType === 'programmes' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                class="px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center space-x-2">
+                            <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+                            <span>Programmes</span>
+                        </button>
+                        <button @click="catalogueType = 'modules'; window.initializeCatalogue('modules')"
+                                :class="catalogueType === 'modules' ? 'bg-primary-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                                class="px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center space-x-2">
+                            <i data-lucide="book-open" class="w-4 h-4"></i>
+                            <span>Modules</span>
+                        </button>
+                    </div>
+
+                    <!-- Year and Spec Type Selectors (for Programmes) -->
+                    <div x-show="catalogueType === 'programmes'" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="info" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-medium text-blue-800 dark:text-blue-300">Select specification parameters:</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="catalogue-cohort-select" class="text-sm text-blue-700 dark:text-blue-300">Type:</label>
+                                <select id="catalogue-cohort-select"
+                                        onchange="window.updateCatalogueSpecType()"
+                                        class="px-3 py-1.5 text-sm border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white">
+                                    <option value="cohort">Cohort Spec</option>
+                                    <option value="term">Academic Year Spec</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="catalogue-year-select" class="text-sm text-blue-700 dark:text-blue-300">Year:</label>
+                                <select id="catalogue-year-select"
+                                        onchange="window.updateCatalogueYear()"
+                                        class="px-3 py-1.5 text-sm border border-blue-300 dark:border-blue-700 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white">
+                                    <option value="2024">2024/25</option>
+                                    <option value="2025" selected>2025/26</option>
+                                    <option value="2026">2026/27</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Year Selector (for Modules) -->
+                    <div x-show="catalogueType === 'modules'" class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="info" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                                <span class="text-sm font-medium text-purple-800 dark:text-purple-300">Select specification parameters:</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="catalogue-module-year-select" class="text-sm text-purple-700 dark:text-purple-300">Year:</label>
+                                <select id="catalogue-module-year-select"
+                                        onchange="window.updateModuleCatalogueYear()"
+                                        class="px-3 py-1.5 text-sm border border-purple-300 dark:border-purple-700 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-800 dark:text-white">
+                                    <option value="2024">2024/25</option>
+                                    <option value="2025" selected>2025/26</option>
+                                    <option value="2026">2026/27</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Actions Toolbar -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <!-- Left: Selection Mode Toggle -->
+                            <div class="flex items-center gap-3">
+                                <button id="toggle-selection-mode"
+                                        onclick="window.toggleSelectionMode()"
+                                        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center gap-2">
+                                    <i data-lucide="check-square" class="w-4 h-4"></i>
+                                    <span id="selection-mode-text">Select Multiple</span>
+                                </button>
+
+                                <!-- Selection Count Badge (hidden by default) -->
+                                <span id="selection-count-badge"
+                                      class="hidden px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium">
+                                    0 selected
+                                </span>
+                            </div>
+
+                            <!-- Right: Bulk Actions (hidden until items selected) -->
+                            <div id="bulk-actions" class="hidden flex flex-wrap items-center gap-2">
+                                <button onclick="window.selectAllFiltered()"
+                                        class="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
+                                    <i data-lucide="list-checks" class="w-4 h-4 inline mr-1"></i>
+                                    Select All Filtered (max 25)
+                                </button>
+                                <button onclick="window.clearSelection()"
+                                        class="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm">
+                                    <i data-lucide="x" class="w-4 h-4 inline mr-1"></i>
+                                    Clear Selection
+                                </button>
+                                <button id="generate-bulk-btn"
+                                        onclick="window.generateBulkDocuments()"
+                                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    Generate Selected (ZIP)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Controls Bar -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <!-- Search -->
+                            <div class="lg:col-span-6">
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        id="catalogue-search"
+                                        placeholder="Search..."
+                                        class="w-full px-4 py-2.5 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                                        onkeyup="window.searchCatalogue()"
+                                    />
+                                    <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3"></i>
+                                </div>
+                            </div>
+
+                            <!-- Sort Dropdown -->
+                            <div class="lg:col-span-3">
+                                <select id="catalogue-sort" onchange="window.sortCatalogue()"
+                                        class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="title-asc">Title (A-Z)</option>
+                                    <option value="title-desc">Title (Z-A)</option>
+                                    <option value="code-asc">Code (A-Z)</option>
+                                    <option value="code-desc">Code (Z-A)</option>
+                                </select>
+                            </div>
+
+                            <!-- Filter and Items Per Page -->
+                            <div class="lg:col-span-3 flex space-x-2">
+                                <button onclick="window.openCatalogueFilters()"
+                                        class="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors flex items-center justify-center space-x-2">
+                                    <i data-lucide="filter" class="w-4 h-4"></i>
+                                    <span>Filters</span>
+                                    <span id="catalogue-filter-count" class="hidden bg-white text-primary-600 rounded-full px-2 py-0.5 text-xs font-bold"></span>
+                                </button>
+                                <select id="catalogue-per-page" onchange="window.changeItemsPerPage()"
+                                        class="px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="20">20</option>
+                                    <option value="30" selected>30</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Result Count -->
+                        <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span id="catalogue-result-count">Loading...</span>
+                        </div>
+
+                        <!-- Active Filter Badges -->
+                        <div id="catalogue-active-filters" class="mt-3 flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Grid Container -->
+                    <div id="catalogue-grid-container" class="min-h-[400px]">
+                        <!-- Loading State -->
+                        <div id="catalogue-loading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <!-- Skeleton cards will be rendered here -->
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-3/4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-3/4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-3/4"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                            </div>
+                        </div>
+
+                        <!-- Grid Content (will be populated by JavaScript) -->
+                        <div id="catalogue-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 hidden"></div>
+
+                        <!-- Empty State -->
+                        <div id="catalogue-empty" class="hidden text-center py-16">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                                <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No results found</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Try adjusting your search or filters</p>
+                            <button onclick="window.clearCatalogueFilters()"
+                                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="catalogue-pagination" class="flex items-center justify-between mt-6 hidden">
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <span id="pagination-info">Showing 1-30 of 3,247</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="pagination-prev" onclick="window.goToCataloguePage('prev')"
+                                    class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <div id="pagination-numbers" class="flex space-x-1">
+                                <!-- Page numbers will be inserted here -->
+                            </div>
+                            <button id="pagination-next" onclick="window.goToCataloguePage('next')"
+                                    class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col s1 m2 l3"></div>
+
+        <!-- Preview Modal -->
+        <div id="previewModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full z-50"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="preview-modal-title"
+             aria-describedby="preview-modal-description">
+            <div class="relative min-h-screen md:flex md:items-center md:justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                            <h3 id="preview-modal-title" class="text-xl font-semibold text-gray-900 dark:text-gray-100">Specification Preview</h3>
+                            <p id="preview-modal-description" class="text-sm text-gray-600 dark:text-gray-300 mt-1">Review the complete specification before downloading</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="window.print()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    aria-label="Print preview"
+                                    title="Print">
+                                <i data-lucide="printer" class="w-5 h-5" aria-hidden="true"></i>
+                            </button>
+                            <button onclick="closePreview()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                    aria-label="Close preview modal"
+                                    title="Close">
+                                <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Content with TOC and scroll optimization -->
+                    <div class="flex-1 overflow-hidden flex">
+                        <!-- Mobile TOC Toggle Button -->
+                        <button id="tocToggleBtn"
+                                onclick="toggleTOC()"
+                                class="lg:hidden fixed top-4 left-4 z-20 bg-primary-600 hover:bg-primary-700 text-white p-2.5 rounded-lg shadow-lg transition-all duration-300"
+                                aria-label="Toggle table of contents"
+                                title="Table of Contents">
+                            <i data-lucide="list" class="w-5 h-5"></i>
+                        </button>
+
+                        <!-- Table of Contents Sidebar -->
+                        <div id="tocSidebar"
+                             class="hidden lg:block w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 overflow-y-auto">
+                            <div class="sticky top-0 p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Contents</h4>
+                                    <button onclick="toggleTOC()" class="lg:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <!-- Progress Bar -->
+                                <div class="mb-4 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                                    <div id="tocProgress" class="bg-primary-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <!-- TOC Links will be inserted here -->
+                                <nav id="tocNav" class="space-y-1">
+                                    <!-- Dynamic TOC will be generated here -->
+                                </nav>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Area -->
+                        <div id="previewContent" class="flex-1 overflow-y-auto px-4 py-3 sm:px-6 sm:py-4 scroll-smooth" style="transform: translateZ(0); will-change: transform; -webkit-overflow-scrolling: touch;">
+                            <!-- Preview content will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Scroll to Top Button -->
+                    <button id="scrollToTopBtn"
+                            class="hidden fixed bottom-6 right-4 sm:bottom-24 sm:right-8 bg-primary-600 hover:bg-primary-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl z-10"
+                            onclick="scrollPreviewToTop()"
+                            aria-label="Scroll to top">
+                        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+                    </button>
+                    
+                    <!-- Modal Footer -->
+                    <div class="flex justify-between items-center px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
+                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                            <i data-lucide="info" class="inline w-4 h-4 mr-1"></i>
+                            Click on sections to expand/collapse
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="closePreview()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                                Close
+                            </button>
+                            <button onclick="downloadFromPreview()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Download Specification</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Change Confirmation Modal -->
+        <div id="moduleChangeConfirmModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full z-[60]"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="confirm-modal-title">
+            <div class="relative min-h-screen md:flex md:items-center md:justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0 w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 dark:text-yellow-400"></i>
+                            </div>
+                            <h3 id="confirm-modal-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">Confirm Module Change</h3>
+                        </div>
+                        <button onclick="closeModuleChangeConfirmation()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                aria-label="Close confirmation modal">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Content -->
+                    <div class="px-6 py-4 space-y-4">
+                        <p class="text-gray-700 dark:text-gray-300">
+                            You are about to submit a change request for the following module:
+                        </p>
+
+                        <!-- Module Details -->
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Module Code:</span>
+                                <span id="confirm-module-code" class="text-sm font-semibold text-gray-900 dark:text-gray-100"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Module Title:</span>
+                                <span id="confirm-module-title" class="text-sm text-gray-900 dark:text-gray-100 text-right max-w-xs truncate"></span>
+                            </div>
+                        </div>
+
+                        <!-- Change Details -->
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-600 p-4 space-y-2">
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Field:</span>
+                                <span id="confirm-field-name" class="text-sm font-semibold text-gray-900 dark:text-gray-100"></span>
+                            </div>
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">From:</span>
+                                <span id="confirm-old-value" class="text-sm text-red-600 dark:text-red-400 line-through"></span>
+                            </div>
+                            <div class="flex justify-between items-start">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">To:</span>
+                                <span id="confirm-new-value" class="text-sm font-semibold text-green-600 dark:text-green-400"></span>
+                            </div>
+                        </div>
+
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            An email notification will be sent to the Curriculum Management Team with these change details.
+                        </p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end items-center gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
+                        <button onclick="closeModuleChangeConfirmation()" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                        <button id="confirm-change-btn" onclick="confirmModuleChange()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
+                            Confirm Change
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay with Progress and Cancel -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 flex flex-col items-center max-w-md w-full mx-4">
+            <!-- Spinner -->
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600"></div>
+
+            <!-- Status Message -->
+            <p id="loadingMessage" class="mt-4 text-gray-700 dark:text-gray-300 font-medium text-center">Generating specification...</p>
+
+            <!-- Detailed Status (for progressive feedback) -->
+            <p id="loadingDetailedStatus" class="mt-2 text-sm text-gray-500 dark:text-gray-400 text-center hidden"></p>
+
+            <!-- Progress Bar -->
+            <div id="loadingProgressContainer" class="w-full mt-4 hidden">
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div id="loadingProgressBar" class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="loadingProgressText" class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">0%</p>
+            </div>
+
+            <!-- Cancel Button -->
+            <button id="loadingCancelBtn"
+                    class="mt-6 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center space-x-2"
+                    onclick="cancelCurrentOperation()">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                <span>Cancel</span>
+            </button>
+        </div>
     </div>
 
-    <div id="module-content" class="row">
-      <div class="col s1 m2 l3"></div>
-      <div class="z-depth-4 form-card blue-grey lighten-5 col s10 m8 l6">
-        <div class="row header">
-          <div class="col s12">
-            <h4>Module Spec Generator</h4>
-          </div>
-        </div>
-        <div class="row autocomplete-container">
-          <div class="mod-initializer">
-            <div class="lds-dual-ring"></div>
-            <h5 class="purple-text text-darken-2">Loading modules</h5>
-          </div>
-          <div class="col s12 form-content hide">
-            <div class="row input-container">
-              <div class="input-field col s11 m9">
-                <i class="material-icons prefix">search</i>
-                <input
-                  type="text"
-                  id="module-autocomplete-input"
-                  class="autocomplete"
-                />
-                <label for="autocomplete-input"
-                  >Search for a module code or title</label
-                >
-              </div>
-            </div>
-            <div class="row module-year-container">
-              <div class="input-field col s11 m9">
-                <select id="mod-year">
-                  <option value="" disabled selected>Choose your option</option>                                                                        
-                  <option value="2024">2024/25</option>
-                  <option value="2025">2025/26</option>
-                  <option value="2026">2026/27</option>
-                </select>
-                <label>Academic Year</label>
-              </div>
-            </div>
-            <div class="row appendix">
-              <p class="radio-options">
-                <label>
-                  <input
-                    class="radio-input"
-                    name="group1"
-                    type="radio"
-                    value="spec"
-                    checked
-                  />
-                  <span class="radio-span">Spec only</span>
-                </label>
-              </p>
-              <p class="radio-options">
-                <label>
-                  <input
-                    class="radio-input"
-                    name="group1"
-                    type="radio"
-                    value="spec+"
-                  />
-                  <span class="radio-span">Spec & modification form</span>
-                </label>
-              </p>
-              <p class="radio-options">
-                <label>
-                  <input
-                    class="radio-input"
-                    name="group1"
-                    type="radio"
-                    value="wd"                    
-                  />
-                  <span class="radio-span">Withdrawal form</span>
-                </label>
-              </p>
-            </div>
-            <div class="row">
-              <div class="col s12 btn-col">
-                <a
-                  class="waves-effect waves-light btn deep-purple darken-2"
-                  id="generate-btn-mod"
-                  ><i class="material-icons right">file_download</i>Generate
-                  Spec</a
-                >
-                <div class="mod-loading hide">
-                  <div class="lds-roller">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                  <p class="loading-text purple-text text-darken-2">
-                    Generating spec
-                  </p>
+    <!-- Notification Container (for stacking notifications) -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2 max-w-sm"
+         role="region"
+         aria-label="Notifications"
+         aria-live="polite">
+        <!-- Notifications will be dynamically added here -->
+    </div>
+
+    <!-- Filter Overlay -->
+    <div id="filter-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 opacity-0 transition-opacity duration-300" onclick="closeAllFilters()"></div>
+
+    <!-- Module Filter Panel -->
+    <div id="module-filter-panel" class="hidden fixed right-0 top-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300">
+        <div class="h-full flex flex-col">
+            <!-- Panel Header -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="filter" class="w-5 h-5 mr-2"></i>
+                            Filter Modules
+                        </h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Refine your search results</p>
+                    </div>
+                    <button onclick="closeModuleFilters()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                    </button>
                 </div>
-              </div>
             </div>
-          </div>
+
+            <!-- Panel Content -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- College Filter -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="building-2" class="w-4 h-4 mr-2"></i>
+                            College
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="selectAllColleges('modules')" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select All</button>
+                            <button onclick="clearAllColleges('modules')" class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Clear</button>
+                        </div>
+                    </div>
+                    <div id="mod-college-filters" class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- School Filter -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="building" class="w-4 h-4 mr-2"></i>
+                            School
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="selectAllSchools('modules')" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select All</button>
+                            <button onclick="clearAllSchools('modules')" class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Clear</button>
+                        </div>
+                    </div>
+                    <div id="mod-school-filters" class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Level Filter -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                        <i data-lucide="layers" class="w-4 h-4 mr-2"></i>
+                        Level
+                    </h4>
+                    <div id="mod-level-filters" class="space-y-2">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Semester Filter -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                        <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
+                        Semester
+                    </h4>
+                    <div id="mod-semester-filters" class="space-y-2">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <div class="flex gap-3">
+                    <button onclick="clearModuleFilters()" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-colors">
+                        Clear All
+                    </button>
+                    <button onclick="applyModuleFilters()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="col s1 m2 l3"></div>
     </div>
-    <!-- Modal Structure -->
-    <div id="modal1" class="modal">
-      <div class="modal-content purple lighten-5">
-        <h4>Something went wrong</h4>
-        <p id="alert"></p>
-      </div>
-      <div class="modal-footer purple lighten-4">
-        <a
-          href="#!"
-          class="
-            modal-close
-            waves-effect waves-green
-            btn-flat
-            purple
-            darken-4
-            white-text
-          "
-          >Close</a
-        >
-      </div>
+
+    <!-- Programme Filter Panel -->
+    <div id="programme-filter-panel" class="hidden fixed right-0 top-0 h-full w-full md:w-96 bg-white dark:bg-gray-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300">
+        <div class="h-full flex flex-col">
+            <!-- Panel Header -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="filter" class="w-5 h-5 mr-2"></i>
+                            Filter Programmes
+                        </h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Refine your search results</p>
+                    </div>
+                    <button onclick="closeProgrammeFilters()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <i data-lucide="x" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Content -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6">
+                <!-- Level Filter -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="layers" class="w-4 h-4 mr-2"></i>
+                            Level
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="selectAllLevels('programmes')" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select All</button>
+                            <button onclick="clearAllLevels('programmes')" class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Clear</button>
+                        </div>
+                    </div>
+                    <div id="prog-level-filters" class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- College Filter -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="building-2" class="w-4 h-4 mr-2"></i>
+                            College
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="selectAllColleges('programmes')" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select All</button>
+                            <button onclick="clearAllColleges('programmes')" class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Clear</button>
+                        </div>
+                    </div>
+                    <div id="prog-college-filters" class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- School Filter -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                            <i data-lucide="school" class="w-4 h-4 mr-2"></i>
+                            School
+                        </h4>
+                        <div class="flex gap-2">
+                            <button onclick="selectAllSchools('programmes')" class="text-xs text-primary-600 dark:text-primary-400 hover:underline">Select All</button>
+                            <button onclick="clearAllSchools('programmes')" class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Clear</button>
+                        </div>
+                    </div>
+                    <div id="prog-school-filters" class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Campus Filter -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                        <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
+                        Campus
+                    </h4>
+                    <div id="prog-campus-filters" class="space-y-2">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Mode Filter -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                        <i data-lucide="clock" class="w-4 h-4 mr-2"></i>
+                        Study Mode
+                    </h4>
+                    <div id="prog-mode-filters" class="space-y-2">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Degree Type Filter -->
+                <div>
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                        <i data-lucide="graduation-cap" class="w-4 h-4 mr-2"></i>
+                        Degree Type
+                    </h4>
+                    <select id="prog-degree-filter" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                        <option value="">All Degree Types</option>
+                        <!-- Dynamically populated -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <div class="flex gap-3">
+                    <button onclick="clearProgrammeFilters()" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-lg transition-colors">
+                        Clear All
+                    </button>
+                    <button onclick="applyProgrammeFilters()" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </body>
-  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.19.7/docxtemplater.js"></script>
-<script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
-<script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>
-<script src="index.js"></script>
+
+    <!-- Bulk Generation Progress Modal -->
+    <div id="bulk-progress-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <i data-lucide="loader" class="w-5 h-5 animate-spin text-primary-600"></i>
+                Generating Documents
+            </h3>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-2">
+                    <span id="bulk-progress-text" class="text-gray-600 dark:text-gray-400" role="status" aria-live="polite" aria-atomic="true">
+                        Processing 1 of 23...
+                    </span>
+                    <span id="bulk-progress-percent" class="text-primary-600 dark:text-primary-400 font-semibold" role="status" aria-live="polite">
+                        4%
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div id="bulk-progress-bar"
+                         class="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full transition-all duration-300 ease-out"
+                         style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Current Item -->
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4 border border-gray-200 dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wide">Current Item:</p>
+                <p id="bulk-current-item" class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" role="status" aria-live="polite">
+                    3041 - BSc Economics
+                </p>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="bulk-status-messages" class="mb-4 text-xs text-gray-600 dark:text-gray-400">
+                <p>This may take a few minutes. Please do not close this window.</p>
+            </div>
+
+            <!-- Cancel Button -->
+            <button id="bulk-cancel-btn"
+                    onclick="window.cancelBulkGeneration()"
+                    class="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium">
+                <i data-lucide="x-circle" class="w-4 h-4 inline mr-2"></i>
+                Cancel Generation
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="custom-confirm-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full">
+            <h3 id="confirm-title" class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Confirm Action
+            </h3>
+            <p id="confirm-message" class="text-gray-600 dark:text-gray-400 mb-6 whitespace-pre-line">
+                Are you sure?
+            </p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel-btn"
+                        class="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium">
+                    Cancel
+                </button>
+                <button id="confirm-ok-btn"
+                        class="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Summary Modal -->
+    <div id="custom-summary-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                Generation Complete
+            </h3>
+            <div id="summary-content" class="flex-1 overflow-y-auto mb-6 text-gray-700 dark:text-gray-300">
+                <!-- Content will be inserted here -->
+            </div>
+            <button id="summary-close-btn"
+                    class="w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <!-- Header -->
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-primary-100 dark:bg-primary-900/40 rounded-full mb-4">
+                        <i data-lucide="sparkles" class="w-8 h-8 text-primary-600 dark:text-primary-400"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                        Welcome to Specification Generator
+                    </h2>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Version <span id="welcome-version"></span>
+                    </p>
+                </div>
+
+                <!-- Main Content -->
+                <div class="space-y-6">
+                    <!-- Quick Start -->
+                    <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <i data-lucide="rocket" class="w-5 h-5 text-primary-600"></i>
+                            Quick Start Guide
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                                <div>
+                                    <p class="text-gray-700 dark:text-gray-300 font-medium">Generate Individual Specifications</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Use the search boxes to find programmes or modules and generate Word documents instantly.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                                <div>
+                                    <p class="text-gray-700 dark:text-gray-300 font-medium">Browse the Programme & Module Catalogue</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Click "Programme & Module Catalogue" to explore all programmes and modules with advanced filters.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                                <div>
+                                    <p class="text-gray-700 dark:text-gray-300 font-medium">Download Multiple Specifications</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Expand any programme card and click "Select Modules to Download" to generate up to 25 module specs at once!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Features -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <i data-lucide="star" class="w-5 h-5 text-primary-600"></i>
+                            Key Features
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Fast fuzzy search</span>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="package" class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Bulk module downloads</span>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="filter" class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Advanced filtering</span>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="moon" class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Dark mode support</span>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="bar-chart" class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0"></i>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Usage analytics</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tour Offer -->
+                    <div class="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="compass" class="w-5 h-5 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                                    Want a guided tour?
+                                </p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                    Take an interactive tour to learn about all the features. You can always access it later from the Help button.
+                                </p>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" id="welcome-start-tour" class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Start tour after closing this modal</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="welcome-dont-show" class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Don't show this again</span>
+                    </label>
+                    <button id="welcome-close-btn"
+                            class="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- What's New Modal -->
+    <div id="whats-new-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <i data-lucide="gift" class="w-6 h-6 text-primary-600"></i>
+                            What's New
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">
+                            Latest updates and features
+                        </p>
+                    </div>
+                    <button id="whats-new-close-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Changelog Content -->
+                <div id="changelog-content" class="space-y-6">
+                    <!-- Changelog entries will be dynamically inserted here -->
+                </div>
+
+                <!-- Footer -->
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button onclick="window.startFeatureTour()"
+                            class="w-full px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2">
+                        <i data-lucide="compass" class="w-4 h-4"></i>
+                        Take a Feature Tour
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.19.7/docxtemplater.js"></script>
+    <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
+    <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>
+    <!-- JSZip for bulk document generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Fuse.js for fuzzy search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+    <!-- Driver.js for feature tours -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+    <!-- Load constants before main app -->
+    <script src="config/constants.js?v=20241211005"></script>
+    <!-- v1.1.0: Added bulk generation, filter pills, and UX improvements -->
+    <script src="modern-app.js?v=1763170000"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Initialize onboarding system
+        if (typeof window.initializeOnboarding === 'function') {
+            window.initializeOnboarding();
+        }
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        // Function to update dark mode
+        function updateDarkMode(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            darkModeToggle.setAttribute('aria-pressed', isDark.toString());
+            localStorage.setItem('darkMode', isDark.toString());
+            lucide.createIcons();
+
+            // Refresh charts if they exist
+            if (typeof window.refreshCharts === 'function') {
+                setTimeout(() => window.refreshCharts(), 100);
+            }
+        }
+
+        darkModeToggle.addEventListener('click', () => {
+            const isDark = !document.documentElement.classList.contains('dark');
+            updateDarkMode(isDark);
+        });
+
+        // Check for saved dark mode preference
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        if (savedDarkMode) {
+            updateDarkMode(true);
+        }
+        
+        // Store the element that opened the modal for focus restoration
+        let previousFocusElement = null;
+
+        // Preview functions - openPreview() is defined in modern-app.js
+
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            modal.classList.add('hidden');
+
+            // Remove event listener
+            document.removeEventListener('keydown', handleModalEscape);
+
+            // Restore focus to the element that opened the modal
+            if (previousFocusElement) {
+                previousFocusElement.focus();
+                previousFocusElement = null;
+            }
+        }
+
+        // Handle Escape key to close modal
+        function handleModalEscape(event) {
+            if (event.key === 'Escape') {
+                closePreview();
+            }
+        }
+
+        // Trap focus within modal
+        function trapFocus(modal) {
+            const focusableElements = modal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            // Remove any existing listener
+            modal.removeEventListener('keydown', handleFocusTrap);
+
+            // Add new listener
+            function handleFocusTrap(e) {
+                if (e.key !== 'Tab') return;
+
+                if (e.shiftKey) {
+                    // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else {
+                    // Tab
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
+
+            modal.addEventListener('keydown', handleFocusTrap);
+        }
+        
+        // Toggle expandable sections
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const icon = document.getElementById(`${sectionId}-icon`);
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-90');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-90');
+            }
+        }
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K or Cmd+K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+
+                // Determine which tab is active and focus appropriate search
+                const programmeTab = document.querySelector('[x-data] [x-show="activeTab === \'programmes\'"]');
+                const moduleTab = document.querySelector('[x-data] [x-show="activeTab === \'modules\'"]');
+
+                // Check which tab is visible (Alpine.js sets display: none on hidden tabs)
+                const isProgrammeTabVisible = programmeTab && window.getComputedStyle(programmeTab).display !== 'none';
+
+                if (isProgrammeTabVisible) {
+                    document.getElementById('prog-search').focus();
+                } else {
+                    document.getElementById('mod-search').focus();
+                }
+            }
+
+            // Escape key to clear search and close dropdowns (when not in modal)
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('previewModal');
+                if (!modal.classList.contains('hidden')) {
+                    // Modal is open, let the modal handler deal with it
+                    return;
+                }
+
+                // Close autocomplete dropdowns
+                const progDropdown = document.getElementById('prog-search-dropdown');
+                const modDropdown = document.getElementById('mod-search-dropdown');
+
+                if (progDropdown && !progDropdown.classList.contains('hidden')) {
+                    progDropdown.classList.add('hidden');
+                    document.getElementById('prog-search').setAttribute('aria-expanded', 'false');
+                }
+                if (modDropdown && !modDropdown.classList.contains('hidden')) {
+                    modDropdown.classList.add('hidden');
+                    document.getElementById('mod-search').setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+    </script>
+</body>
 </html>
