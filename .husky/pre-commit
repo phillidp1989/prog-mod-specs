@@ -1,0 +1,41 @@
+#!/bin/sh
+# Husky pre-commit hook: Auto-compress JSON files
+
+# Get list of staged JSON files in controllers/ directory
+STAGED_JSON_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^controllers/.*\.json$' | grep -v '\.gz$')
+
+# If no JSON files are staged, skip compression
+if [ -z "$STAGED_JSON_FILES" ]; then
+  exit 0
+fi
+
+echo "📦 Pre-commit: Compressing staged JSON files..."
+echo ""
+
+# Run compression script for only the staged files
+node scripts/compress-json-files.js
+
+# Check if compression was successful
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Compression failed! Commit aborted."
+  exit 1
+fi
+
+echo ""
+echo "✓ Compression complete. Adding .gz files to commit..."
+
+# Add the corresponding .gz files to staging
+for file in $STAGED_JSON_FILES; do
+  GZ_FILE="${file}.gz"
+  if [ -f "$GZ_FILE" ]; then
+    git add "$GZ_FILE"
+    echo "  Added: $GZ_FILE"
+  fi
+done
+
+echo ""
+echo "✓ Pre-commit hook completed successfully"
+echo ""
+
+exit 0
