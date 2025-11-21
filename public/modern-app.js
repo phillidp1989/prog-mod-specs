@@ -2210,7 +2210,7 @@ async function generateProgrammeDocBlob(data, cohort, year) {
  * @param {string} docType - 'spec' or 'spec+'
  * @returns {Promise<Blob>}
  */
-async function generateModuleDocBlob(data, year, docType = 'spec') {
+window.generateModuleDocBlob = async function generateModuleDocBlob(data, year, docType = 'spec') {
     return new Promise((resolve, reject) => {
         const docPath = `/module-${docType}.docx`;
 
@@ -2287,7 +2287,7 @@ async function generateModuleDocBlob(data, year, docType = 'spec') {
             }
         });
     });
-}
+};
 
 /**
  * Global flag to track if bulk generation is cancelled
@@ -8110,7 +8110,7 @@ window.generateBulkModulesFromProgramme = async function() {
                 }
 
                 // Generate document blob using default type '+' (module spec+)
-                const blob = await generateModuleDocBlob(data, moduleYear, '+');
+                const blob = await window.generateModuleDocBlob(data, moduleYear, '+');
 
                 // Add to ZIP in year-based folder
                 const yearLabel = `Year${getYearFromModuleCode(moduleCode)}`;
