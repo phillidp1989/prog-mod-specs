@@ -2212,7 +2212,12 @@ async function generateProgrammeDocBlob(data, cohort, year) {
  */
 window.generateModuleDocBlob = async function generateModuleDocBlob(data, year, docType = 'spec') {
     return new Promise((resolve, reject) => {
-        const docPath = `/module-${docType}.docx`;
+        // Map docType to correct template filename
+        // docType can be: 'spec', '+', or 'wd'
+        // Files are: module-spec.docx, module-spec+.docx, module-wd.docx
+        const docPath = docType === '+'
+            ? '/module-spec+.docx'
+            : `/module-${docType}.docx`;
 
         loadFile(docPath, function(error, content) {
             if (error) {
