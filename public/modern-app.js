@@ -1080,7 +1080,7 @@ window.generateProgrammePreview = function(data, cohort, year) {
                             ` : `
                                 <button
                                     id="select-modules-btn"
-                                    onclick="window.toggleModuleSelectionMode('${progCode}')"
+                                    onclick="event.stopPropagation(); window.toggleModuleSelectionMode('${progCode}')"
                                     class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                                 >
                                     <i data-lucide="check-square" class="w-3.5 h-3.5 mr-1.5"></i>
