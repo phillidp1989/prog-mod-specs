@@ -8105,7 +8105,7 @@ window.generateBulkModulesFromProgramme = async function() {
                 // Fetch module spec data
                 const data = await fetchModuleSpecData(moduleCode, moduleYear);
 
-                if (!data || !data.modCode) {
+                if (!data || !data.code) {
                     throw new Error(`No data found for module ${moduleCode}`);
                 }
 
