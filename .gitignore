@@ -104,3 +104,28 @@ dist
 .tern-port
 
 .sh
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# SMB/Network share temporary files
+.smbdelete*
+.smb*
+
+# Backup files
+*.bak
+*.bak[0-9]
+*.backup
+*~
+
+# Personal deployment scripts
+gitpush.sh
+pushbat.bat
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
