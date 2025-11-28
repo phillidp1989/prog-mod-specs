@@ -47,9 +47,10 @@ if (!emailConfigured) {
  * @param {string} field - Field that was changed ("Semester" or "Module Lead")
  * @param {string} oldValue - Original value before change
  * @param {string} newValue - New value after change
+ * @param {string} requesterName - Name of person requesting the change
  * @returns {Promise<Object>} - Success/failure status
  */
-async function sendModuleChangeNotification(moduleData, field, oldValue, newValue) {
+async function sendModuleChangeNotification(moduleData, field, oldValue, newValue, requesterName) {
   try {
     // Check if email service is configured
     if (!emailConfigured) {
@@ -79,6 +80,12 @@ async function sendModuleChangeNotification(moduleData, field, oldValue, newValu
 Module Update Request
 
 A change has been requested for the following module:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUESTED BY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${requesterName}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MODULE DETAILS
@@ -114,6 +121,13 @@ Please update the student records system accordingly.
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb;">Module Update Request</h2>
           <p>A change has been requested for the following module:</p>
+
+          <div style="background-color: #dbeafe; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #2563eb;">
+            <h3 style="color: #1e40af; margin-top: 0; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+              Requested By
+            </h3>
+            <p style="font-size: 18px; font-weight: bold; color: #1e3a8a; margin: 0;">${requesterName}</p>
+          </div>
 
           <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
             <h3 style="color: #1f2937; margin-top: 0; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">

@@ -12,8 +12,8 @@ fi
 echo "📦 Pre-commit: Compressing staged JSON files..."
 echo ""
 
-# Run compression script for only the staged files
-node scripts/compress-json-files.js
+# Run compression script for only the staged files (pass them as arguments)
+node scripts/compress-json-files.js $STAGED_JSON_FILES
 
 # Check if compression was successful
 if [ $? -ne 0 ]; then

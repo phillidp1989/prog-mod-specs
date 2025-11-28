@@ -178,6 +178,22 @@ function setupAutocomplete(inputId, data, fuseInstance) {
         // Use Fuse.js for fuzzy search on filtered data
         const results = tempFuse.search(value);
 
+        // Prioritize exact code matches
+        // Check if the search value matches a code exactly (codes are at the start of each item)
+        const searchValueUpper = value.toUpperCase().trim();
+        const exactMatchIndex = results.findIndex(result => {
+            const item = result.item.value;
+            // Extract code (everything before " - ")
+            const code = item.split(' - ')[0].trim();
+            return code === searchValueUpper;
+        });
+
+        // If exact match found and it's not already first, move it to the top
+        if (exactMatchIndex > 0) {
+            const [exactMatch] = results.splice(exactMatchIndex, 1);
+            results.unshift(exactMatch);
+        }
+
         // Extract the matched items and limit to 10
         filteredItems = results.slice(0, 10).map(result => result.item.value);
 
@@ -199,7 +215,7 @@ function setupAutocomplete(inputId, data, fuseInstance) {
         }
 
         // Generate dropdown HTML with fuzzy match highlighting
-        dropdown.innerHTML = results.slice(0, 10).map((result, index) => {
+        const optionsHTML = results.slice(0, 10).map((result, index) => {
             const item = result.item.value;
             const matches = result.matches && result.matches.length > 0 ? result.matches[0].indices : [];
 
@@ -265,6 +281,17 @@ function setupAutocomplete(inputId, data, fuseInstance) {
             `;
         }).join('');
 
+        // Add keyboard shortcut hints footer
+        const keyboardHintsHTML = `
+            <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-3">
+                <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">↑↓</kbd> navigate</span>
+                <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Enter</kbd> select</span>
+                <span><kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Esc</kbd> close</span>
+            </div>
+        `;
+
+        dropdown.innerHTML = optionsHTML + keyboardHintsHTML;
+
         dropdown.classList.remove('hidden');
         input.setAttribute('aria-expanded', 'true');
     });
@@ -290,6 +317,10 @@ function setupAutocomplete(inputId, data, fuseInstance) {
                 e.preventDefault();
                 selectAutocomplete(inputId, filteredItems[currentFocusIndex]);
             }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+            input.setAttribute('aria-expanded', 'false');
+            currentFocusIndex = -1;
         }
     });
 
@@ -868,7 +899,7 @@ window.generateProgrammePreview = function(data, cohort, year) {
                 <td class="px-4 py-3 text-center">
                     <input type="checkbox"
                            ${isSelected ? 'checked' : ''}
-                           onchange="window.toggleModuleSelection('${mod.moduleCode}', '${year}', '${progCode}', '${safeTitle}', '${mod.moduleCredits || ''}', '${mod.moduleLevel || ''}', '${mod.moduleSemester || ''}', this.checked)"
+                           onchange="window.toggleModuleSelection('${mod.moduleCode}', '${year}', '${progCode}', '${safeTitle}', '${mod.moduleCredits || ''}', '${mod.moduleLevel || ''}', '${mod.moduleSemester || ''}', ${yearNum}, this.checked)"
                            class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
                 </td>`;
         }
@@ -3361,6 +3392,38 @@ function openModuleChangeConfirmation(moduleData, field, oldValue, newValue) {
     document.getElementById('confirm-old-value').textContent = oldValue || '(not set)';
     document.getElementById('confirm-new-value').textContent = newValue;
 
+    // Show semester warning if field is Semester
+    const semesterWarning = document.getElementById('semester-warning');
+    if (semesterWarning) {
+        if (field === 'Semester') {
+            semesterWarning.classList.remove('hidden');
+            // Initialize the alert icon
+            if (window.lucide) lucide.createIcons();
+        } else {
+            semesterWarning.classList.add('hidden');
+        }
+    }
+
+    // Load saved requester name from localStorage
+    const requesterNameInput = document.getElementById('confirm-requester-name');
+    const requesterNameError = document.getElementById('requester-name-error');
+    if (requesterNameInput) {
+        const savedName = localStorage.getItem('moduleChangeRequesterName') || '';
+        requesterNameInput.value = savedName;
+        // Clear any previous validation errors
+        requesterNameInput.classList.remove('border-red-500');
+        if (requesterNameError) {
+            requesterNameError.classList.add('hidden');
+        }
+        // Clear error on input
+        requesterNameInput.addEventListener('input', function() {
+            this.classList.remove('border-red-500');
+            if (requesterNameError) {
+                requesterNameError.classList.add('hidden');
+            }
+        }, { once: true });
+    }
+
     // Store data for submission
     modal.dataset.moduleCode = moduleData.code;
     modal.dataset.moduleTitle = moduleData.title;
@@ -3377,8 +3440,23 @@ function openModuleChangeConfirmation(moduleData, field, oldValue, newValue) {
 async function confirmModuleChange() {
     const modal = document.getElementById('moduleChangeConfirmModal');
     const confirmBtn = document.getElementById('confirm-change-btn');
+    const requesterNameInput = document.getElementById('confirm-requester-name');
+    const requesterNameError = document.getElementById('requester-name-error');
 
     if (!modal) return;
+
+    // Validate requester name
+    const requesterName = requesterNameInput ? requesterNameInput.value.trim() : '';
+    if (!requesterName) {
+        if (requesterNameInput) {
+            requesterNameInput.classList.add('border-red-500');
+            requesterNameInput.focus();
+        }
+        if (requesterNameError) {
+            requesterNameError.classList.remove('hidden');
+        }
+        return;
+    }
 
     // Get stored data
     const moduleData = {
@@ -3395,12 +3473,16 @@ async function confirmModuleChange() {
     confirmBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Sending...';
     lucide.createIcons();
 
+    // Save requester name to localStorage for future use
+    localStorage.setItem('moduleChangeRequesterName', requesterName);
+
     try {
         const response = await axios.post(`${CONSTANTS.API_ENDPOINTS.base}/notify-module-change`, {
             moduleData,
             field,
             oldValue,
-            newValue
+            newValue,
+            requesterName
         });
 
         if (response.data.success) {
@@ -7936,6 +8018,98 @@ window.clearSelection = function() {
 };
 
 /**
+ * Show or hide the floating selection bar
+ */
+function showFloatingSelectionBar(show, progCode = null) {
+    const existingBar = document.getElementById('floating-selection-bar');
+
+    if (!show) {
+        // Hide and remove the bar
+        if (existingBar) {
+            existingBar.style.opacity = '0';
+            existingBar.style.transform = 'translate(-50%, 20px)';
+            setTimeout(() => existingBar.remove(), 200);
+        }
+        return;
+    }
+
+    // Create the bar if it doesn't exist
+    if (!existingBar) {
+        const bar = document.createElement('div');
+        bar.id = 'floating-selection-bar';
+        bar.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 transition-all duration-200';
+        bar.style.opacity = '0';
+        bar.style.transform = 'translate(-50%, 20px)';
+
+        bar.innerHTML = `
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" id="floating-selection-counter">
+                <i data-lucide="check-square" class="w-3 h-3 mr-1"></i>
+                ${catalogueState.selectedModulesFromProgramme.size}/25 selected
+            </span>
+            <button
+                onclick="window.generateBulkModulesFromProgramme()"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                id="floating-download-btn"
+                ${catalogueState.selectedModulesFromProgramme.size === 0 ? 'disabled' : ''}
+            >
+                <i data-lucide="download" class="w-3.5 h-3.5 mr-1.5"></i>
+                Download ZIP
+            </button>
+            <button
+                onclick="window.clearModuleSelection()"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+                <i data-lucide="x" class="w-3.5 h-3.5 mr-1.5"></i>
+                Clear
+            </button>
+            <button
+                onclick="window.toggleModuleSelectionMode('${progCode}')"
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 bg-white dark:bg-gray-800 rounded-lg border border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            >
+                <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1.5"></i>
+                Exit
+            </button>
+        `;
+
+        document.body.appendChild(bar);
+
+        // Initialize icons
+        if (window.lucide) lucide.createIcons();
+
+        // Animate in
+        requestAnimationFrame(() => {
+            bar.style.opacity = '1';
+            bar.style.transform = 'translate(-50%, 0)';
+        });
+    }
+}
+
+/**
+ * Update the floating selection bar counter
+ */
+function updateFloatingSelectionBar() {
+    const counter = document.getElementById('floating-selection-counter');
+    const downloadBtn = document.getElementById('floating-download-btn');
+    const count = catalogueState.selectedModulesFromProgramme.size;
+
+    if (counter) {
+        counter.innerHTML = `
+            <i data-lucide="check-square" class="w-3 h-3 mr-1"></i>
+            ${count}/25 selected
+        `;
+        if (window.lucide) lucide.createIcons();
+    }
+
+    if (downloadBtn) {
+        if (count === 0) {
+            downloadBtn.setAttribute('disabled', 'true');
+        } else {
+            downloadBtn.removeAttribute('disabled');
+        }
+    }
+}
+
+/**
  * Toggle module selection mode for a specific programme
  */
 window.toggleModuleSelectionMode = function(progCode) {
@@ -7944,30 +8118,39 @@ window.toggleModuleSelectionMode = function(progCode) {
         catalogueState.moduleSelectionMode = false;
         catalogueState.moduleSelectionProgrammeCode = null;
         catalogueState.selectedModulesFromProgramme.clear();
+        showFloatingSelectionBar(false);
         window.showNotification?.('Module selection mode disabled', 'info');
     } else {
         // Enter selection mode
         catalogueState.moduleSelectionMode = true;
         catalogueState.moduleSelectionProgrammeCode = progCode;
         catalogueState.selectedModulesFromProgramme.clear();
+        showFloatingSelectionBar(true, progCode);
         window.showNotification?.('Click checkboxes to select modules to download (max 25)', 'success');
     }
 
-    // Re-render the expanded card to show/hide checkboxes
+    // Re-render the expanded card content in-place to show/hide checkboxes
     const cardId = `prog-card-${progCode}`;
     const card = document.getElementById(cardId);
     if (card && catalogueState.expandedCardId === cardId) {
-        // Trigger re-expansion to refresh the preview
-        window.toggleCardExpansion(cardId);
-        // Toggle again to re-expand with new selection mode state
-        setTimeout(() => window.toggleCardExpansion(cardId), 100);
+        // Get item data from the card's data attribute
+        const itemDataJson = card.getAttribute('data-item');
+        if (itemDataJson) {
+            try {
+                const itemData = JSON.parse(itemDataJson);
+                // Re-render the content without collapsing/expanding
+                replaceSkeletonWithContent(card, itemData, 'programme');
+            } catch (e) {
+                console.error('Failed to refresh card content:', e);
+            }
+        }
     }
 };
 
 /**
  * Toggle selection of a specific module
  */
-window.toggleModuleSelection = function(moduleCode, year, progCode, moduleTitle, moduleCredits, moduleLevel, moduleSemester, checked) {
+window.toggleModuleSelection = function(moduleCode, year, progCode, moduleTitle, moduleCredits, moduleLevel, moduleSemester, programmeYear, checked) {
     const moduleKey = `${moduleCode}_${year}`;
 
     if (checked) {
@@ -7987,7 +8170,8 @@ window.toggleModuleSelection = function(moduleCode, year, progCode, moduleTitle,
             moduleTitle,
             moduleCredits,
             moduleLevel,
-            moduleSemester
+            moduleSemester,
+            programmeYear
         });
     } else {
         // Remove module from selection
@@ -8016,6 +8200,9 @@ window.toggleModuleSelection = function(moduleCode, year, progCode, moduleTitle,
             downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     }
+
+    // Update floating selection bar counter
+    updateFloatingSelectionBar();
 };
 
 /**
@@ -8028,6 +8215,9 @@ window.clearModuleSelection = function() {
     if (count > 0) {
         window.showNotification?.(`Cleared ${count} module selection${count !== 1 ? 's' : ''}`, 'info');
     }
+
+    // Update floating selection bar counter
+    updateFloatingSelectionBar();
 
     // Re-render the expanded card
     const progCode = catalogueState.moduleSelectionProgrammeCode;
@@ -8082,10 +8272,10 @@ window.generateBulkModulesFromProgramme = async function() {
     showBulkProgressModal();
 
     try {
-        // Organize modules by year for folder structure
+        // Organize modules by programme year for folder structure
         const modulesByYear = {};
         selectedModules.forEach(mod => {
-            const yearLabel = `Year${getYearFromModuleCode(mod.moduleCode)}`;
+            const yearLabel = getYearFolderLabel(mod.programmeYear);
             if (!modulesByYear[yearLabel]) {
                 modulesByYear[yearLabel] = [];
             }
@@ -8117,8 +8307,8 @@ window.generateBulkModulesFromProgramme = async function() {
                 // Generate document blob using default type '+' (module spec+)
                 const blob = await window.generateModuleDocBlob(data, moduleYear, '+');
 
-                // Add to ZIP in year-based folder
-                const yearLabel = `Year${getYearFromModuleCode(moduleCode)}`;
+                // Add to ZIP in programme year folder
+                const yearLabel = getYearFolderLabel(module.programmeYear);
                 const filename = `${moduleCode}_${moduleYear}.docx`;
                 zip.file(`${yearLabel}/${filename}`, blob);
 
@@ -8202,6 +8392,18 @@ function getYearFromModuleCode(moduleCode) {
     // Default to year 0 (foundation/introductory)
     return '0';
 };
+
+/**
+ * Helper function to get year folder label from programme year
+ * @param {number|string} programmeYear - The year within the programme (0, 1, 2, etc.)
+ * @returns {string} - Folder label like "Year0", "Year1", "Year2", etc.
+ */
+function getYearFolderLabel(programmeYear) {
+    if (programmeYear === undefined || programmeYear === null || programmeYear === '') {
+        return 'Other';
+    }
+    return `Year${programmeYear}`;
+}
 
 /**
  * Update selection count badge
@@ -8565,6 +8767,14 @@ function replaceSkeletonWithContent(cardElement, itemData, type) {
 
 // Collapse a card
 function collapseCard(cardElement, cardId, itemData, type) {
+    // Clean up module selection mode when collapsing
+    if (catalogueState.moduleSelectionMode) {
+        catalogueState.moduleSelectionMode = false;
+        catalogueState.moduleSelectionProgrammeCode = null;
+        catalogueState.selectedModulesFromProgramme.clear();
+        showFloatingSelectionBar(false);
+    }
+
     const updateDOM = () => {
         catalogueState.expandedCardId = null;
         cardElement.classList.remove('catalogue-card-expanded', 'catalogue-card-loading');
@@ -8642,6 +8852,8 @@ window.toggleCardExpansion = async function(cardId) {
         // Store full spec data in itemData
         if (fullSpecData) {
             itemData.fullSpec = fullSpecData;
+            // Update the data-item attribute so it persists for re-renders
+            cardElement.setAttribute('data-item', JSON.stringify(itemData));
         }
 
         // Step 3: Replace skeleton with real content
@@ -9530,7 +9742,7 @@ window.startFeatureTour = function() {
             {
                 popover: {
                     title: 'Download Selected Modules 📦',
-                    description: 'Once you\'ve selected modules, scroll back up and click "Download Selected (ZIP)" to generate all specifications at once. They\'ll be organized in year folders (Year0/, Year1/, Year2/, etc.).',
+                    description: 'Once you\'ve selected modules, use the floating bar at the bottom of the screen to download them as a ZIP. They\'ll be organized in year folders (Year0/, Year1/, Year2/, etc.).',
                 },
                 onHighlightStarted: () => {
                     setTimeout(() => {

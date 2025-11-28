@@ -4,15 +4,17 @@
  * Compress large JSON files to gzip format for faster loading
  * This can reduce file sizes by 80-90% and improve disk I/O performance
  *
- * Usage: node scripts/compress-json-files.js
+ * Usage:
+ *   node scripts/compress-json-files.js                    # Compress all default files
+ *   node scripts/compress-json-files.js file1.json file2.json  # Compress specific files
  */
 
 const fs = require('fs');
 const zlib = require('zlib');
 const path = require('path');
 
-// Files to compress
-const filesToCompress = [
+// Default files to compress (when no arguments provided)
+const defaultFilesToCompress = [
     '../controllers/prog2024.json',
     '../controllers/prog2025.json',
     '../controllers/prog2026.json',
@@ -23,6 +25,28 @@ const filesToCompress = [
     '../controllers/module2025.json',
     '../controllers/module2026.json'
 ];
+
+// Get files from command line arguments or use defaults
+const cliArgs = process.argv.slice(2);
+let filesToCompress;
+
+if (cliArgs.length > 0) {
+    // Convert CLI arguments to relative paths from this script's location
+    filesToCompress = cliArgs.map(arg => {
+        // If argument is already a relative path from script dir, use it
+        if (arg.startsWith('../')) {
+            return arg;
+        }
+        // If it's a path from project root, make it relative to script dir
+        if (arg.startsWith('controllers/')) {
+            return '../' + arg;
+        }
+        // Otherwise assume it's just a filename in controllers
+        return '../controllers/' + path.basename(arg);
+    });
+} else {
+    filesToCompress = defaultFilesToCompress;
+}
 
 console.log('Compressing JSON files to gzip format...\n');
 

@@ -428,7 +428,7 @@ const moduleCreditsDistribution = async (req, res, next) => {
 // Send module change notification email
 const notifyModuleChange = async (req, res, next) => {
   try {
-    const { moduleData, field, oldValue, newValue } = req.body;
+    const { moduleData, field, oldValue, newValue, requesterName } = req.body;
 
     // Validate request body
     if (!moduleData || !moduleData.code || !moduleData.title || !moduleData.year) {
@@ -443,6 +443,13 @@ const notifyModuleChange = async (req, res, next) => {
       });
     }
 
+    // Validate requester name
+    if (!requesterName || typeof requesterName !== 'string' || !requesterName.trim()) {
+      return res.status(400).json({
+        error: 'Missing required field: requesterName'
+      });
+    }
+
     // Validate field is one of the allowed fields
     const allowedFields = ['Semester', 'Module Lead'];
     if (!allowedFields.includes(field)) {
@@ -451,10 +458,10 @@ const notifyModuleChange = async (req, res, next) => {
       });
     }
 
-    console.log(`Processing module change notification for ${moduleData.code}: ${field} changed from "${oldValue}" to "${newValue}"`);
+    console.log(`Processing module change notification for ${moduleData.code}: ${field} changed from "${oldValue}" to "${newValue}" (requested by: ${requesterName.trim()})`);
 
     // Attempt to send email notification
-    const result = await sendModuleChangeNotification(moduleData, field, oldValue, newValue);
+    const result = await sendModuleChangeNotification(moduleData, field, oldValue, newValue, requesterName.trim());
 
     // Always return success for valid changes, but indicate email status
     if (result.success) {
