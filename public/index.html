@@ -404,6 +404,13 @@
                         <i data-lucide="grid" class="w-4 h-4"></i>
                         <span>Catalogue</span>
                     </button>
+                    <button
+                        @click="activeTab = 'deepsearch'"
+                        :class="activeTab === 'deepsearch' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="search-code" class="w-4 h-4"></i>
+                        <span>Deep Search</span>
+                    </button>
                 </nav>
             </div>
 
@@ -1562,6 +1569,132 @@
                                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deep Search Tab Content -->
+            <div x-show="activeTab === 'deepsearch'" class="p-6" style="display: none;">
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl p-6 border border-indigo-200 dark:border-indigo-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                                    Deep Search
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Search across all programme and module content including descriptions, learning outcomes, aims, and assessments
+                                </p>
+                            </div>
+                            <div class="hidden md:block">
+                                <i data-lucide="search-code" class="w-16 h-16 text-indigo-400 dark:text-indigo-600 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <label for="deep-search-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Search Keywords
+                                </label>
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        id="deep-search-input"
+                                        placeholder="Search for keywords across all content (min 3 characters)..."
+                                        class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
+                                        aria-label="Deep search input"
+                                    />
+                                    <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" aria-hidden="true"></i>
+                                    <div id="deep-search-spinner" class="hidden absolute right-4 top-3.5">
+                                        <div class="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full md:w-48">
+                                <label for="deep-search-year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Academic Year
+                                </label>
+                                <select id="deep-search-year" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white">
+                                    <option value="2026">2026/27</option>
+                                    <option value="2025">2025/26</option>
+                                    <option value="2024">2024/25</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Summary -->
+                    <div id="deep-search-summary" class="hidden">
+                        <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                            <span id="deep-search-count">Found 0 results</span>
+                            <span id="deep-search-breakdown"></span>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="deep-search-loading" class="hidden">
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-20 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                    <div class="flex-1">
+                                        <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3 w-3/4"></div>
+                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-1/2"></div>
+                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-pulse">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-20 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                    <div class="flex-1">
+                                        <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-3 w-3/4"></div>
+                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2 w-1/2"></div>
+                                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="deep-search-results" class="space-y-4">
+                        <!-- Results will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="deep-search-empty" class="hidden text-center py-16">
+                        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-4">
+                            <i data-lucide="search" class="w-10 h-10 text-indigo-400"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Start Searching</h3>
+                        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                            Enter at least 3 characters to search across all programme and module content including descriptions, learning outcomes, and assessments.
+                        </p>
+                    </div>
+
+                    <!-- No Results State -->
+                    <div id="deep-search-no-results" class="hidden text-center py-16">
+                        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                            <i data-lucide="search-x" class="w-10 h-10 text-gray-400"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Results Found</h3>
+                        <p class="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                            No programmes or modules matched your search. Try different keywords or check your spelling.
+                        </p>
+                    </div>
+
+                    <!-- Load More Button -->
+                    <div id="deep-search-load-more" class="hidden text-center">
+                        <button onclick="window.loadMoreDeepSearchResults()"
+                                class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            Load More Results
+                        </button>
                     </div>
                 </div>
             </div>

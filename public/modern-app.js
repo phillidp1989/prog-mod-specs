@@ -9869,3 +9869,428 @@ window.startFeatureTour = function() {
     // Start the tour
     driverObj.drive();
 };
+
+// ==========================================
+// Deep Search Functionality
+// ==========================================
+
+(function() {
+    // Deep search state
+    const deepSearchState = {
+        query: '',
+        year: '2026',
+        results: [],
+        total: { programmes: 0, modules: 0, combined: 0 },
+        offset: 0,
+        limit: 20,
+        loading: false,
+        debounceTimer: null
+    };
+
+    // Initialize deep search when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDeepSearch();
+    });
+
+    function initializeDeepSearch() {
+        const searchInput = document.getElementById('deep-search-input');
+        const yearSelect = document.getElementById('deep-search-year');
+
+        if (!searchInput || !yearSelect) {
+            console.log('Deep search elements not found, skipping initialization');
+            return;
+        }
+
+        // Search input handler with debounce
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+
+            // Clear previous debounce
+            if (deepSearchState.debounceTimer) {
+                clearTimeout(deepSearchState.debounceTimer);
+            }
+
+            // Reset state
+            deepSearchState.query = query;
+            deepSearchState.offset = 0;
+            deepSearchState.results = [];
+
+            // Show empty state if query too short
+            if (query.length < 3) {
+                showDeepSearchEmptyState();
+                return;
+            }
+
+            // Debounce the search
+            deepSearchState.debounceTimer = setTimeout(() => {
+                performDeepSearch();
+            }, 300);
+        });
+
+        // Year selector handler
+        yearSelect.addEventListener('change', function(e) {
+            deepSearchState.year = e.target.value;
+            deepSearchState.offset = 0;
+            deepSearchState.results = [];
+
+            if (deepSearchState.query.length >= 3) {
+                performDeepSearch();
+            }
+        });
+
+        // Show initial empty state
+        showDeepSearchEmptyState();
+
+        console.log('Deep search initialized');
+    }
+
+    async function performDeepSearch() {
+        if (deepSearchState.loading) return;
+
+        deepSearchState.loading = true;
+        showDeepSearchLoading();
+
+        try {
+            const params = new URLSearchParams({
+                q: deepSearchState.query,
+                year: deepSearchState.year,
+                limit: deepSearchState.limit,
+                offset: deepSearchState.offset
+            });
+
+            const response = await axios.get(`/search/all?${params}`);
+            const data = response.data;
+
+            if (data.success) {
+                deepSearchState.total = data.total;
+
+                if (deepSearchState.offset === 0) {
+                    deepSearchState.results = data.results;
+                } else {
+                    deepSearchState.results = [...deepSearchState.results, ...data.results];
+                }
+
+                renderDeepSearchResults();
+            } else {
+                showDeepSearchError(data.error || 'Search failed');
+            }
+        } catch (error) {
+            console.error('Deep search error:', error);
+            showDeepSearchError('Failed to perform search. Please try again.');
+        } finally {
+            deepSearchState.loading = false;
+            hideDeepSearchLoading();
+        }
+    }
+
+    function renderDeepSearchResults() {
+        const resultsContainer = document.getElementById('deep-search-results');
+        const summaryContainer = document.getElementById('deep-search-summary');
+        const countSpan = document.getElementById('deep-search-count');
+        const breakdownSpan = document.getElementById('deep-search-breakdown');
+        const emptyState = document.getElementById('deep-search-empty');
+        const noResultsState = document.getElementById('deep-search-no-results');
+        const loadMoreBtn = document.getElementById('deep-search-load-more');
+
+        // Hide all states first
+        emptyState?.classList.add('hidden');
+        noResultsState?.classList.add('hidden');
+        loadMoreBtn?.classList.add('hidden');
+
+        if (deepSearchState.results.length === 0) {
+            resultsContainer.innerHTML = '';
+            summaryContainer?.classList.add('hidden');
+            noResultsState?.classList.remove('hidden');
+            return;
+        }
+
+        // Show summary
+        summaryContainer?.classList.remove('hidden');
+        if (countSpan) {
+            countSpan.textContent = `Found ${deepSearchState.total.combined} results`;
+        }
+        if (breakdownSpan) {
+            breakdownSpan.textContent = `${deepSearchState.total.programmes} programmes, ${deepSearchState.total.modules} modules`;
+        }
+
+        // Render results
+        resultsContainer.innerHTML = deepSearchState.results.map(result => {
+            if (result.type === 'programme') {
+                return renderProgrammeResult(result);
+            } else {
+                return renderModuleResult(result);
+            }
+        }).join('');
+
+        // Reinitialize Lucide icons for the new content
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        // Show load more button if there are more results
+        if (deepSearchState.results.length < deepSearchState.total.combined) {
+            loadMoreBtn?.classList.remove('hidden');
+        }
+    }
+
+    function renderProgrammeResult(prog) {
+        const matchesHtml = prog.matches.map(match => `
+            <div class="mt-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                <div class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-1">
+                    Match in: ${escapeHtml(match.field)}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    ${match.snippet}
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-start gap-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                        <i data-lucide="graduation-cap" class="w-3 h-3 mr-1"></i>
+                        Programme
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                            ${escapeHtml(prog.progCode)} - ${escapeHtml(prog.progTitle)}
+                        </h3>
+                        <div class="flex flex-wrap gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="building-2" class="w-3 h-3"></i>
+                                ${escapeHtml(prog.college || 'N/A')}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                ${escapeHtml(prog.campus || 'N/A')}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                ${escapeHtml(prog.mode || 'N/A')}
+                            </span>
+                        </div>
+                        ${matchesHtml}
+                        <div class="mt-4 flex gap-2">
+                            <button onclick="window.viewProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}')"
+                                    class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                                View Details
+                            </button>
+                            <button onclick="window.generateProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}')"
+                                    class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i data-lucide="file-text" class="w-3 h-3"></i>
+                                Generate Spec
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderModuleResult(mod) {
+        const matchesHtml = mod.matches.map(match => `
+            <div class="mt-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                <div class="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+                    Match in: ${escapeHtml(match.field)}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                    ${match.snippet}
+                </div>
+            </div>
+        `).join('');
+
+        // Format level
+        const levelMap = { 'LC': 'Certificate', 'LI': 'Intermediate', 'LH': 'Honours', 'LM': 'Masters', 'LD': 'Doctoral' };
+        const levelText = levelMap[mod.level] || mod.level;
+
+        return `
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-start gap-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
+                        <i data-lucide="book-open" class="w-3 h-3 mr-1"></i>
+                        Module
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                            ${escapeHtml(mod.code)} - ${escapeHtml(mod.title)}
+                        </h3>
+                        <div class="flex flex-wrap gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="layers" class="w-3 h-3"></i>
+                                ${escapeHtml(levelText)}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="award" class="w-3 h-3"></i>
+                                ${mod.credits || 0} credits
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i>
+                                ${escapeHtml(mod.semester || 'N/A')}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i data-lucide="building-2" class="w-3 h-3"></i>
+                                ${escapeHtml(mod.school || 'N/A')}
+                            </span>
+                        </div>
+                        ${matchesHtml}
+                        <div class="mt-4 flex gap-2">
+                            <button onclick="window.viewModuleFromDeepSearch('${escapeHtml(mod.code)}')"
+                                    class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i data-lucide="eye" class="w-3 h-3"></i>
+                                View Details
+                            </button>
+                            <button onclick="window.generateModuleFromDeepSearch('${escapeHtml(mod.code)}')"
+                                    class="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors inline-flex items-center gap-1">
+                                <i data-lucide="file-text" class="w-3 h-3"></i>
+                                Generate Spec
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function showDeepSearchLoading() {
+        const loading = document.getElementById('deep-search-loading');
+        const spinner = document.getElementById('deep-search-spinner');
+        const results = document.getElementById('deep-search-results');
+        const emptyState = document.getElementById('deep-search-empty');
+        const noResults = document.getElementById('deep-search-no-results');
+
+        spinner?.classList.remove('hidden');
+
+        // Only show loading skeleton if no results yet
+        if (deepSearchState.offset === 0) {
+            loading?.classList.remove('hidden');
+            results?.classList.add('hidden');
+        }
+
+        emptyState?.classList.add('hidden');
+        noResults?.classList.add('hidden');
+    }
+
+    function hideDeepSearchLoading() {
+        const loading = document.getElementById('deep-search-loading');
+        const spinner = document.getElementById('deep-search-spinner');
+        const results = document.getElementById('deep-search-results');
+
+        loading?.classList.add('hidden');
+        spinner?.classList.add('hidden');
+        results?.classList.remove('hidden');
+    }
+
+    function showDeepSearchEmptyState() {
+        const emptyState = document.getElementById('deep-search-empty');
+        const noResults = document.getElementById('deep-search-no-results');
+        const results = document.getElementById('deep-search-results');
+        const summary = document.getElementById('deep-search-summary');
+        const loadMore = document.getElementById('deep-search-load-more');
+
+        emptyState?.classList.remove('hidden');
+        noResults?.classList.add('hidden');
+        results && (results.innerHTML = '');
+        summary?.classList.add('hidden');
+        loadMore?.classList.add('hidden');
+    }
+
+    function showDeepSearchError(message) {
+        const results = document.getElementById('deep-search-results');
+        if (results) {
+            results.innerHTML = `
+                <div class="text-center py-8 text-red-600 dark:text-red-400">
+                    <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-4"></i>
+                    <p>${escapeHtml(message)}</p>
+                </div>
+            `;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Global functions for button handlers
+    window.loadMoreDeepSearchResults = function() {
+        deepSearchState.offset += deepSearchState.limit;
+        performDeepSearch();
+    };
+
+    window.viewProgrammeFromDeepSearch = function(progCode) {
+        // Switch to programmes tab and fill in the search
+        const progSearchInput = document.getElementById('prog-search');
+        if (progSearchInput) {
+            // Find the Alpine.js component and switch tabs
+            const tabContainer = document.querySelector('[x-data]');
+            if (tabContainer && tabContainer.__x) {
+                tabContainer.__x.$data.activeTab = 'programmes';
+            }
+
+            // Set the search value
+            progSearchInput.value = progCode;
+            progSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    window.generateProgrammeFromDeepSearch = function(progCode) {
+        // Switch to programmes tab
+        const tabContainer = document.querySelector('[x-data]');
+        if (tabContainer && tabContainer.__x) {
+            tabContainer.__x.$data.activeTab = 'programmes';
+        }
+
+        // Fill in the search and trigger generation
+        const progSearchInput = document.getElementById('prog-search');
+        if (progSearchInput) {
+            progSearchInput.value = progCode;
+            progSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Wait a moment for autocomplete to populate, then alert user to complete selection
+            setTimeout(() => {
+                alert(`Programme ${progCode} selected. Please choose the Spec Type and Academic Year, then click Generate.`);
+            }, 500);
+        }
+    };
+
+    window.viewModuleFromDeepSearch = function(modCode) {
+        // Switch to modules tab and fill in the search
+        const modSearchInput = document.getElementById('mod-search');
+        if (modSearchInput) {
+            // Find the Alpine.js component and switch tabs
+            const tabContainer = document.querySelector('[x-data]');
+            if (tabContainer && tabContainer.__x) {
+                tabContainer.__x.$data.activeTab = 'modules';
+            }
+
+            // Set the search value
+            modSearchInput.value = modCode;
+            modSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    window.generateModuleFromDeepSearch = function(modCode) {
+        // Switch to modules tab
+        const tabContainer = document.querySelector('[x-data]');
+        if (tabContainer && tabContainer.__x) {
+            tabContainer.__x.$data.activeTab = 'modules';
+        }
+
+        // Fill in the search and trigger generation
+        const modSearchInput = document.getElementById('mod-search');
+        if (modSearchInput) {
+            modSearchInput.value = modCode;
+            modSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Wait a moment for autocomplete to populate, then alert user to complete selection
+            setTimeout(() => {
+                alert(`Module ${modCode} selected. Please choose the Academic Year, then click Generate.`);
+            }, 500);
+        }
+    };
+})();

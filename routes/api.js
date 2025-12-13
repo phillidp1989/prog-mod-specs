@@ -3,6 +3,7 @@ const router = express.Router();
 const { programmeData, autocompleteData, programmeFilterOptions, programmeDegreeTypes, progCollegeDistribution, progCampusDistribution } = require('../controllers/programmes');
 const { moduleData, moduleAutocompleteData, moduleLevelDistribution, moduleCreditsDistribution, moduleFilterOptions, schoolActivity, notifyModuleChange } = require('../controllers/modules');
 const { getUsageStats, getUsageByMonth, getUsageByCollege, getUsageBySchool, getTopSpecs } = require('../controllers/analytics');
+const { deepSearchAll, deepSearchModules, deepSearchProgrammes } = require('../controllers/search');
 const { validateProgrammeParams, validateModuleParams } = require('../utils/validators');
 const { rateLimiters } = require('../config/security');
 
@@ -119,6 +120,22 @@ router.get('/usage-by-school',
 router.get('/top-specs',
   rateLimiters.api,
   getTopSpecs
+);
+
+// Deep search routes
+router.get('/search/all',
+  rateLimiters.api,
+  deepSearchAll
+);
+
+router.get('/search/modules',
+  rateLimiters.api,
+  deepSearchModules
+);
+
+router.get('/search/programmes',
+  rateLimiters.api,
+  deepSearchProgrammes
 );
 
 module.exports = router;
