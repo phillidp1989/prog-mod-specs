@@ -10072,12 +10072,12 @@ window.startFeatureTour = function() {
                         </div>
                         ${matchesHtml}
                         <div class="mt-4 flex gap-2">
-                            <button onclick="window.viewProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}')"
+                            <button onclick="window.viewProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}', '${escapeHtml(prog.progTitle).replace(/'/g, "\\'")}')"
                                     class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors inline-flex items-center gap-1">
                                 <i data-lucide="eye" class="w-3 h-3"></i>
                                 View Details
                             </button>
-                            <button onclick="window.generateProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}')"
+                            <button onclick="window.generateProgrammeFromDeepSearch('${escapeHtml(prog.progCode)}', '${escapeHtml(prog.progTitle).replace(/'/g, "\\'")}')"
                                     class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors inline-flex items-center gap-1">
                                 <i data-lucide="file-text" class="w-3 h-3"></i>
                                 Generate Spec
@@ -10136,12 +10136,12 @@ window.startFeatureTour = function() {
                         </div>
                         ${matchesHtml}
                         <div class="mt-4 flex gap-2">
-                            <button onclick="window.viewModuleFromDeepSearch('${escapeHtml(mod.code)}')"
+                            <button onclick="window.viewModuleFromDeepSearch('${escapeHtml(mod.code)}', '${escapeHtml(mod.title).replace(/'/g, "\\'")}')"
                                     class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors inline-flex items-center gap-1">
                                 <i data-lucide="eye" class="w-3 h-3"></i>
                                 View Details
                             </button>
-                            <button onclick="window.generateModuleFromDeepSearch('${escapeHtml(mod.code)}')"
+                            <button onclick="window.generateModuleFromDeepSearch('${escapeHtml(mod.code)}', '${escapeHtml(mod.title).replace(/'/g, "\\'")}')"
                                     class="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors inline-flex items-center gap-1">
                                 <i data-lucide="file-text" class="w-3 h-3"></i>
                                 Generate Spec
@@ -10216,81 +10216,146 @@ window.startFeatureTour = function() {
         return div.innerHTML;
     }
 
+    // Helper function for tab switching (using correct Alpine.js v3 API)
+    function switchToTab(tabName) {
+        console.log('[DeepSearch] switchToTab called with:', tabName);
+        const tabContainer = document.querySelector('[x-data*="activeTab"]');
+        console.log('[DeepSearch] tabContainer found:', !!tabContainer);
+        if (tabContainer) {
+            console.log('[DeepSearch] _x_dataStack:', tabContainer._x_dataStack);
+            console.log('[DeepSearch] __x:', tabContainer.__x);
+        }
+        if (tabContainer && tabContainer._x_dataStack && tabContainer._x_dataStack[0]) {
+            console.log('[DeepSearch] Setting activeTab to:', tabName);
+            tabContainer._x_dataStack[0].activeTab = tabName;
+        } else {
+            console.warn('[DeepSearch] Could not switch tab - Alpine data not found');
+        }
+    }
+
     // Global functions for button handlers
     window.loadMoreDeepSearchResults = function() {
         deepSearchState.offset += deepSearchState.limit;
         performDeepSearch();
     };
 
-    window.viewProgrammeFromDeepSearch = function(progCode) {
-        // Switch to programmes tab and fill in the search
-        const progSearchInput = document.getElementById('prog-search');
-        if (progSearchInput) {
-            // Find the Alpine.js component and switch tabs
-            const tabContainer = document.querySelector('[x-data]');
-            if (tabContainer && tabContainer.__x) {
-                tabContainer.__x.$data.activeTab = 'programmes';
-            }
+    window.viewProgrammeFromDeepSearch = function(progCode, progTitle) {
+        console.log('[DeepSearch] viewProgrammeFromDeepSearch called with:', progCode, progTitle);
 
-            // Set the search value
-            progSearchInput.value = progCode;
-            progSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        // Switch to programmes tab using correct Alpine.js v3 API
+        switchToTab('programmes');
+
+        // Set the search value in the correct format
+        const progSearchInput = document.getElementById('prog-search');
+        console.log('[DeepSearch] prog-search element found:', !!progSearchInput);
+        if (progSearchInput) {
+            progSearchInput.value = `${progCode} - ${progTitle}`;
+            console.log('[DeepSearch] Set search value to:', progSearchInput.value);
         }
+
+        // Set the year from deep search state
+        const yearSelect = document.getElementById('year-select');
+        console.log('[DeepSearch] year-select element found:', !!yearSelect);
+        if (yearSelect) {
+            yearSelect.value = deepSearchState.year;
+            console.log('[DeepSearch] Set year to:', deepSearchState.year);
+        }
+
+        // Scroll to the form after tab switch
+        setTimeout(() => {
+            const input = document.getElementById('prog-search');
+            console.log('[DeepSearch] Scrolling to input');
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input?.focus();
+        }, 100);
     };
 
-    window.generateProgrammeFromDeepSearch = function(progCode) {
+    window.generateProgrammeFromDeepSearch = function(progCode, progTitle) {
         // Switch to programmes tab
-        const tabContainer = document.querySelector('[x-data]');
-        if (tabContainer && tabContainer.__x) {
-            tabContainer.__x.$data.activeTab = 'programmes';
-        }
+        switchToTab('programmes');
 
-        // Fill in the search and trigger generation
+        // Set the search value in the correct format
         const progSearchInput = document.getElementById('prog-search');
         if (progSearchInput) {
-            progSearchInput.value = progCode;
-            progSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-            // Wait a moment for autocomplete to populate, then alert user to complete selection
-            setTimeout(() => {
-                alert(`Programme ${progCode} selected. Please choose the Spec Type and Academic Year, then click Generate.`);
-            }, 500);
+            progSearchInput.value = `${progCode} - ${progTitle}`;
         }
-    };
 
-    window.viewModuleFromDeepSearch = function(modCode) {
-        // Switch to modules tab and fill in the search
-        const modSearchInput = document.getElementById('mod-search');
-        if (modSearchInput) {
-            // Find the Alpine.js component and switch tabs
-            const tabContainer = document.querySelector('[x-data]');
-            if (tabContainer && tabContainer.__x) {
-                tabContainer.__x.$data.activeTab = 'modules';
+        // Set the year from deep search state
+        const yearSelect = document.getElementById('year-select');
+        if (yearSelect) {
+            yearSelect.value = deepSearchState.year;
+        }
+
+        // Scroll to the form and highlight the spec type dropdown
+        setTimeout(() => {
+            const generateBtn = document.getElementById('prog-generate-btn');
+            generateBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Briefly highlight the spec type dropdown to draw attention
+            const cohortSelect = document.getElementById('cohort-select');
+            if (cohortSelect) {
+                cohortSelect.focus();
+                cohortSelect.classList.add('ring-2', 'ring-primary-500');
+                setTimeout(() => {
+                    cohortSelect.classList.remove('ring-2', 'ring-primary-500');
+                }, 2000);
             }
-
-            // Set the search value
-            modSearchInput.value = modCode;
-            modSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        }, 100);
     };
 
-    window.generateModuleFromDeepSearch = function(modCode) {
+    window.viewModuleFromDeepSearch = function(modCode, modTitle) {
+        console.log('[DeepSearch] viewModuleFromDeepSearch called with:', modCode, modTitle);
+
         // Switch to modules tab
-        const tabContainer = document.querySelector('[x-data]');
-        if (tabContainer && tabContainer.__x) {
-            tabContainer.__x.$data.activeTab = 'modules';
+        switchToTab('modules');
+
+        // Set the search value
+        const modSearchInput = document.getElementById('mod-search');
+        console.log('[DeepSearch] mod-search element found:', !!modSearchInput);
+        if (modSearchInput) {
+            modSearchInput.value = `${modCode} - ${modTitle}`;
+            console.log('[DeepSearch] Set search value to:', modSearchInput.value);
         }
 
-        // Fill in the search and trigger generation
+        // Set the year from deep search state
+        const modYearSelect = document.getElementById('mod-year-select');
+        console.log('[DeepSearch] mod-year-select element found:', !!modYearSelect);
+        if (modYearSelect) {
+            modYearSelect.value = deepSearchState.year;
+            console.log('[DeepSearch] Set year to:', deepSearchState.year);
+        }
+
+        // Scroll to the form
+        setTimeout(() => {
+            const input = document.getElementById('mod-search');
+            console.log('[DeepSearch] Scrolling to input');
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input?.focus();
+        }, 100);
+    };
+
+    window.generateModuleFromDeepSearch = function(modCode, modTitle) {
+        // Switch to modules tab
+        switchToTab('modules');
+
+        // Set the search value
         const modSearchInput = document.getElementById('mod-search');
         if (modSearchInput) {
-            modSearchInput.value = modCode;
-            modSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-            // Wait a moment for autocomplete to populate, then alert user to complete selection
-            setTimeout(() => {
-                alert(`Module ${modCode} selected. Please choose the Academic Year, then click Generate.`);
-            }, 500);
+            modSearchInput.value = `${modCode} - ${modTitle}`;
         }
+
+        // Set the year from deep search state
+        const modYearSelect = document.getElementById('mod-year-select');
+        if (modYearSelect) {
+            modYearSelect.value = deepSearchState.year;
+        }
+
+        // Auto-trigger the generate button for modules (no spec type choice needed)
+        setTimeout(() => {
+            const generateBtn = document.getElementById('mod-generate-btn');
+            if (generateBtn) {
+                generateBtn.click();
+            }
+        }, 200);
     };
 })();
