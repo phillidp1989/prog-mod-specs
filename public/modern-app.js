@@ -9879,6 +9879,7 @@ window.startFeatureTour = function() {
     const deepSearchState = {
         query: '',
         year: '2026',
+        specType: 'cohort',
         results: [],
         total: { programmes: 0, modules: 0, combined: 0 },
         offset: 0,
@@ -9895,6 +9896,7 @@ window.startFeatureTour = function() {
     function initializeDeepSearch() {
         const searchInput = document.getElementById('deep-search-input');
         const yearSelect = document.getElementById('deep-search-year');
+        const specTypeSelect = document.getElementById('deep-search-spec-type');
 
         if (!searchInput || !yearSelect) {
             console.log('Deep search elements not found, skipping initialization');
@@ -9937,6 +9939,13 @@ window.startFeatureTour = function() {
                 performDeepSearch();
             }
         });
+
+        // Spec type selector handler (for programmes)
+        if (specTypeSelect) {
+            specTypeSelect.addEventListener('change', function(e) {
+                deepSearchState.specType = e.target.value;
+            });
+        }
 
         // Show initial empty state
         showDeepSearchEmptyState();
@@ -10216,146 +10225,103 @@ window.startFeatureTour = function() {
         return div.innerHTML;
     }
 
-    // Helper function for tab switching (using correct Alpine.js v3 API)
-    function switchToTab(tabName) {
-        console.log('[DeepSearch] switchToTab called with:', tabName);
-        const tabContainer = document.querySelector('[x-data*="activeTab"]');
-        console.log('[DeepSearch] tabContainer found:', !!tabContainer);
-        if (tabContainer) {
-            console.log('[DeepSearch] _x_dataStack:', tabContainer._x_dataStack);
-            console.log('[DeepSearch] __x:', tabContainer.__x);
-        }
-        if (tabContainer && tabContainer._x_dataStack && tabContainer._x_dataStack[0]) {
-            console.log('[DeepSearch] Setting activeTab to:', tabName);
-            tabContainer._x_dataStack[0].activeTab = tabName;
-        } else {
-            console.warn('[DeepSearch] Could not switch tab - Alpine data not found');
-        }
-    }
-
     // Global functions for button handlers
     window.loadMoreDeepSearchResults = function() {
         deepSearchState.offset += deepSearchState.limit;
         performDeepSearch();
     };
 
-    window.viewProgrammeFromDeepSearch = function(progCode, progTitle) {
-        console.log('[DeepSearch] viewProgrammeFromDeepSearch called with:', progCode, progTitle);
+    window.viewProgrammeFromDeepSearch = async function(progCode, progTitle) {
+        try {
+            // Show loading
+            window.showLoading(true, 'Loading programme details...');
 
-        // Switch to programmes tab using correct Alpine.js v3 API
-        switchToTab('programmes');
+            // Fetch full programme data
+            const response = await axios.get(`/prog-data/${progCode}/${deepSearchState.specType}/${deepSearchState.year}`);
+            const data = response.data;
 
-        // Set the search value in the correct format
-        const progSearchInput = document.getElementById('prog-search');
-        console.log('[DeepSearch] prog-search element found:', !!progSearchInput);
-        if (progSearchInput) {
-            progSearchInput.value = `${progCode} - ${progTitle}`;
-            console.log('[DeepSearch] Set search value to:', progSearchInput.value);
+            // Store for download from preview modal
+            currentPreviewData = data;
+            currentPreviewType = 'programme';
+            currentPreviewYear = deepSearchState.year;
+            currentPreviewCohort = deepSearchState.specType;
+
+            // Generate preview HTML and show modal
+            const previewHtml = window.generateProgrammePreview(data, deepSearchState.specType, deepSearchState.year);
+            window.openPreview(previewHtml);
+
+        } catch (error) {
+            console.error('Error loading programme:', error);
+            window.showNotification?.('Failed to load programme details', 'error');
+        } finally {
+            window.showLoading(false);
         }
-
-        // Set the year from deep search state
-        const yearSelect = document.getElementById('year-select');
-        console.log('[DeepSearch] year-select element found:', !!yearSelect);
-        if (yearSelect) {
-            yearSelect.value = deepSearchState.year;
-            console.log('[DeepSearch] Set year to:', deepSearchState.year);
-        }
-
-        // Scroll to the form after tab switch
-        setTimeout(() => {
-            const input = document.getElementById('prog-search');
-            console.log('[DeepSearch] Scrolling to input');
-            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            input?.focus();
-        }, 100);
     };
 
-    window.generateProgrammeFromDeepSearch = function(progCode, progTitle) {
-        // Switch to programmes tab
-        switchToTab('programmes');
+    window.generateProgrammeFromDeepSearch = async function(progCode, progTitle) {
+        try {
+            window.showLoading(true, 'Generating programme specification...');
 
-        // Set the search value in the correct format
-        const progSearchInput = document.getElementById('prog-search');
-        if (progSearchInput) {
-            progSearchInput.value = `${progCode} - ${progTitle}`;
+            // Fetch full programme data
+            const response = await axios.get(`/prog-data/${progCode}/${deepSearchState.specType}/${deepSearchState.year}`);
+            const data = response.data;
+
+            // Generate and download document
+            await window.generateProgrammeDoc(data, deepSearchState.specType, deepSearchState.year);
+
+            window.showNotification?.('Programme specification downloaded!', 'success');
+        } catch (error) {
+            console.error('Error generating programme:', error);
+            window.showNotification?.('Failed to generate programme specification', 'error');
+        } finally {
+            window.showLoading(false);
         }
-
-        // Set the year from deep search state
-        const yearSelect = document.getElementById('year-select');
-        if (yearSelect) {
-            yearSelect.value = deepSearchState.year;
-        }
-
-        // Scroll to the form and highlight the spec type dropdown
-        setTimeout(() => {
-            const generateBtn = document.getElementById('prog-generate-btn');
-            generateBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            // Briefly highlight the spec type dropdown to draw attention
-            const cohortSelect = document.getElementById('cohort-select');
-            if (cohortSelect) {
-                cohortSelect.focus();
-                cohortSelect.classList.add('ring-2', 'ring-primary-500');
-                setTimeout(() => {
-                    cohortSelect.classList.remove('ring-2', 'ring-primary-500');
-                }, 2000);
-            }
-        }, 100);
     };
 
-    window.viewModuleFromDeepSearch = function(modCode, modTitle) {
-        console.log('[DeepSearch] viewModuleFromDeepSearch called with:', modCode, modTitle);
+    window.viewModuleFromDeepSearch = async function(modCode, modTitle) {
+        try {
+            // Show loading
+            window.showLoading(true, 'Loading module details...');
 
-        // Switch to modules tab
-        switchToTab('modules');
+            // Fetch full module data
+            const response = await axios.get(`/mod-data/${modCode}/${deepSearchState.year}`);
+            const data = response.data;
 
-        // Set the search value
-        const modSearchInput = document.getElementById('mod-search');
-        console.log('[DeepSearch] mod-search element found:', !!modSearchInput);
-        if (modSearchInput) {
-            modSearchInput.value = `${modCode} - ${modTitle}`;
-            console.log('[DeepSearch] Set search value to:', modSearchInput.value);
+            // Store for download from preview modal
+            currentPreviewData = data;
+            currentPreviewType = 'module';
+            currentPreviewYear = deepSearchState.year;
+            currentPreviewDocType = 'spec';
+
+            // Generate preview HTML and show modal
+            const previewHtml = window.generateModulePreview(data, deepSearchState.year);
+            window.openPreview(previewHtml);
+
+        } catch (error) {
+            console.error('Error loading module:', error);
+            window.showNotification?.('Failed to load module details', 'error');
+        } finally {
+            window.showLoading(false);
         }
-
-        // Set the year from deep search state
-        const modYearSelect = document.getElementById('mod-year-select');
-        console.log('[DeepSearch] mod-year-select element found:', !!modYearSelect);
-        if (modYearSelect) {
-            modYearSelect.value = deepSearchState.year;
-            console.log('[DeepSearch] Set year to:', deepSearchState.year);
-        }
-
-        // Scroll to the form
-        setTimeout(() => {
-            const input = document.getElementById('mod-search');
-            console.log('[DeepSearch] Scrolling to input');
-            input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            input?.focus();
-        }, 100);
     };
 
-    window.generateModuleFromDeepSearch = function(modCode, modTitle) {
-        // Switch to modules tab
-        switchToTab('modules');
+    window.generateModuleFromDeepSearch = async function(modCode, modTitle) {
+        try {
+            window.showLoading(true, 'Generating module specification...');
 
-        // Set the search value
-        const modSearchInput = document.getElementById('mod-search');
-        if (modSearchInput) {
-            modSearchInput.value = `${modCode} - ${modTitle}`;
+            // Fetch full module data
+            const response = await axios.get(`/mod-data/${modCode}/${deepSearchState.year}`);
+            const data = response.data;
+
+            // Generate and download document
+            await window.generateModuleDoc(data, deepSearchState.year, 'spec');
+
+            window.showNotification?.('Module specification downloaded!', 'success');
+        } catch (error) {
+            console.error('Error generating module:', error);
+            window.showNotification?.('Failed to generate module specification', 'error');
+        } finally {
+            window.showLoading(false);
         }
-
-        // Set the year from deep search state
-        const modYearSelect = document.getElementById('mod-year-select');
-        if (modYearSelect) {
-            modYearSelect.value = deepSearchState.year;
-        }
-
-        // Auto-trigger the generate button for modules (no spec type choice needed)
-        setTimeout(() => {
-            const generateBtn = document.getElementById('mod-generate-btn');
-            if (generateBtn) {
-                generateBtn.click();
-            }
-        }, 200);
     };
 })();
