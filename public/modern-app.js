@@ -9885,7 +9885,37 @@ window.startFeatureTour = function() {
         offset: 0,
         limit: 20,
         loading: false,
-        debounceTimer: null
+        debounceTimer: null,
+        filters: {
+            types: [],
+            colleges: [],
+            schools: [],
+            campuses: [],
+            levels: [],
+            credits: [],
+            matchFields: []
+        },
+        filterOptions: {
+            colleges: [],
+            schools: [],
+            campuses: [],
+            levels: ['C', 'D', 'H', 'I', 'M'],
+            credits: ['10', '20', '30', '40', '60', '80', '120'],
+            matchFields: [
+                'Title', 'Code', 'Description', 'Learning Outcomes', 'Assessment',
+                'Programme Aims', 'Knowledge Outcomes', 'Skills Outcomes',
+                'School', 'College', 'Module Lead', 'Subject'
+            ]
+        }
+    };
+
+    // Level code to name mapping
+    const levelNames = {
+        'C': 'Certificate (LC)',
+        'D': 'Doctoral (LD)',
+        'H': 'Honours (LH)',
+        'I': 'Intermediate (LI)',
+        'M': 'Masters (LM)'
     };
 
     // Initialize deep search when DOM is ready
@@ -9902,6 +9932,9 @@ window.startFeatureTour = function() {
             console.log('Deep search elements not found, skipping initialization');
             return;
         }
+
+        // Load filter options from API
+        loadDeepSearchFilterOptions();
 
         // Search input handler with debounce
         searchInput.addEventListener('input', function(e) {
@@ -9947,11 +9980,315 @@ window.startFeatureTour = function() {
             });
         }
 
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[id^="deep-search-filter-"]')) {
+                closeAllDeepSearchFilterDropdowns();
+            }
+        });
+
         // Show initial empty state
         showDeepSearchEmptyState();
 
         console.log('Deep search initialized');
     }
+
+    // Load filter options from API
+    async function loadDeepSearchFilterOptions() {
+        try {
+            const [modResponse, progResponse] = await Promise.all([
+                axios.get('/filter-options/modules'),
+                axios.get('/filter-options/programmes')
+            ]);
+
+            // Merge filter options from both modules and programmes
+            const modOptions = modResponse.data || {};
+            const progOptions = progResponse.data || {};
+
+            // Colleges (from programmes)
+            deepSearchState.filterOptions.colleges = progOptions.colleges || [];
+
+            // Schools (combine from both, deduplicate)
+            const allSchools = new Set([
+                ...(modOptions.schools || []),
+                ...(progOptions.schools || [])
+            ]);
+            deepSearchState.filterOptions.schools = [...allSchools].sort();
+
+            // Campuses (from programmes)
+            deepSearchState.filterOptions.campuses = progOptions.campuses || [];
+
+            // Populate filter dropdowns
+            populateDeepSearchFilterDropdowns();
+        } catch (error) {
+            console.error('Failed to load filter options:', error);
+        }
+    }
+
+    // Populate filter dropdown options
+    function populateDeepSearchFilterDropdowns() {
+        // College dropdown
+        const collegeDropdown = document.getElementById('deep-search-filter-college-dropdown');
+        if (collegeDropdown) {
+            collegeDropdown.innerHTML = deepSearchState.filterOptions.colleges.map(college => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${escapeHtml(college)}" onchange="updateDeepSearchFilter('colleges', '${escapeHtml(college)}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" id="deep-search-filter-college-${escapeHtml(college).replace(/\s+/g, '-')}">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${escapeHtml(college)}</span>
+                </label>
+            `).join('');
+        }
+
+        // School dropdown
+        const schoolDropdown = document.getElementById('deep-search-filter-school-dropdown');
+        if (schoolDropdown) {
+            schoolDropdown.innerHTML = deepSearchState.filterOptions.schools.map(school => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${escapeHtml(school)}" onchange="updateDeepSearchFilter('schools', '${escapeHtml(school)}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${escapeHtml(school)}</span>
+                </label>
+            `).join('');
+        }
+
+        // Campus dropdown
+        const campusDropdown = document.getElementById('deep-search-filter-campus-dropdown');
+        if (campusDropdown) {
+            campusDropdown.innerHTML = deepSearchState.filterOptions.campuses.map(campus => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${escapeHtml(campus)}" onchange="updateDeepSearchFilter('campuses', '${escapeHtml(campus)}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${escapeHtml(campus)}</span>
+                </label>
+            `).join('');
+        }
+
+        // Level dropdown
+        const levelDropdown = document.getElementById('deep-search-filter-level-dropdown');
+        if (levelDropdown) {
+            levelDropdown.innerHTML = deepSearchState.filterOptions.levels.map(level => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${level}" onchange="updateDeepSearchFilter('levels', '${level}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${levelNames[level] || level}</span>
+                </label>
+            `).join('');
+        }
+
+        // Credits dropdown
+        const creditsDropdown = document.getElementById('deep-search-filter-credits-dropdown');
+        if (creditsDropdown) {
+            creditsDropdown.innerHTML = deepSearchState.filterOptions.credits.map(credits => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${credits}" onchange="updateDeepSearchFilter('credits', '${credits}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${credits} credits</span>
+                </label>
+            `).join('');
+        }
+
+        // Match Field dropdown
+        const matchFieldDropdown = document.getElementById('deep-search-filter-matchField-dropdown');
+        if (matchFieldDropdown) {
+            matchFieldDropdown.innerHTML = deepSearchState.filterOptions.matchFields.map(field => `
+                <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                    <input type="checkbox" value="${escapeHtml(field)}" onchange="updateDeepSearchFilter('matchFields', '${escapeHtml(field)}')"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${escapeHtml(field)}</span>
+                </label>
+            `).join('');
+        }
+    }
+
+    // Helper to escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#039;');
+    }
+
+    // Toggle filter dropdown
+    window.toggleDeepSearchFilterDropdown = function(filterType) {
+        const dropdown = document.getElementById(`deep-search-filter-${filterType}-dropdown`);
+        if (!dropdown) return;
+
+        // Close other dropdowns
+        document.querySelectorAll('[id$="-dropdown"]').forEach(d => {
+            if (d.id !== `deep-search-filter-${filterType}-dropdown` && d.id.startsWith('deep-search-filter-')) {
+                d.classList.add('hidden');
+            }
+        });
+
+        dropdown.classList.toggle('hidden');
+    };
+
+    // Close all filter dropdowns
+    function closeAllDeepSearchFilterDropdowns() {
+        document.querySelectorAll('[id^="deep-search-filter-"][id$="-dropdown"]').forEach(d => {
+            d.classList.add('hidden');
+        });
+    }
+
+    // Update filter value
+    window.updateDeepSearchFilter = function(category, value) {
+        const index = deepSearchState.filters[category].indexOf(value);
+        if (index > -1) {
+            deepSearchState.filters[category].splice(index, 1);
+        } else {
+            deepSearchState.filters[category].push(value);
+        }
+
+        updateDeepSearchFilterUI();
+
+        // Re-run search with new filters
+        if (deepSearchState.query.length >= 3) {
+            deepSearchState.offset = 0;
+            deepSearchState.results = [];
+            performDeepSearch();
+        }
+    };
+
+    // Update filter UI (counts, active filters display)
+    function updateDeepSearchFilterUI() {
+        const filterCategories = ['types', 'colleges', 'schools', 'campuses', 'levels', 'credits', 'matchFields'];
+        const filterNames = {
+            types: 'type',
+            colleges: 'college',
+            schools: 'school',
+            campuses: 'campus',
+            levels: 'level',
+            credits: 'credits',
+            matchFields: 'matchField'
+        };
+
+        let totalActiveFilters = 0;
+
+        filterCategories.forEach(category => {
+            const count = deepSearchState.filters[category].length;
+            totalActiveFilters += count;
+
+            const countSpan = document.getElementById(`deep-search-filter-${filterNames[category]}-count`);
+            if (countSpan) {
+                if (count > 0) {
+                    countSpan.textContent = count;
+                    countSpan.classList.remove('hidden');
+                } else {
+                    countSpan.classList.add('hidden');
+                }
+            }
+        });
+
+        // Show/hide clear all button
+        const clearBtn = document.getElementById('deep-search-clear-filters');
+        if (clearBtn) {
+            if (totalActiveFilters > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+
+        // Update active filters display
+        const activeFiltersContainer = document.getElementById('deep-search-active-filters');
+        if (activeFiltersContainer) {
+            const tags = [];
+
+            // Type filters
+            deepSearchState.filters.types.forEach(type => {
+                tags.push(createFilterTag('types', type, type === 'programme' ? 'Programme' : 'Module'));
+            });
+
+            // College filters
+            deepSearchState.filters.colleges.forEach(college => {
+                tags.push(createFilterTag('colleges', college, college));
+            });
+
+            // School filters
+            deepSearchState.filters.schools.forEach(school => {
+                tags.push(createFilterTag('schools', school, school));
+            });
+
+            // Campus filters
+            deepSearchState.filters.campuses.forEach(campus => {
+                tags.push(createFilterTag('campuses', campus, campus));
+            });
+
+            // Level filters
+            deepSearchState.filters.levels.forEach(level => {
+                tags.push(createFilterTag('levels', level, levelNames[level] || level));
+            });
+
+            // Credits filters
+            deepSearchState.filters.credits.forEach(credits => {
+                tags.push(createFilterTag('credits', credits, `${credits} credits`));
+            });
+
+            // Match Field filters
+            deepSearchState.filters.matchFields.forEach(field => {
+                tags.push(createFilterTag('matchFields', field, field));
+            });
+
+            if (tags.length > 0) {
+                activeFiltersContainer.innerHTML = tags.join('');
+                activeFiltersContainer.classList.remove('hidden');
+            } else {
+                activeFiltersContainer.classList.add('hidden');
+            }
+        }
+    }
+
+    // Create a filter tag element
+    function createFilterTag(category, value, displayName) {
+        return `
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-200 rounded-full text-xs">
+                ${escapeHtml(displayName)}
+                <button type="button" onclick="updateDeepSearchFilter('${category}', '${escapeHtml(value)}')"
+                        class="hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full p-0.5">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </span>
+        `;
+    }
+
+    // Clear all filters
+    window.clearDeepSearchFilters = function() {
+        deepSearchState.filters = {
+            types: [],
+            colleges: [],
+            schools: [],
+            campuses: [],
+            levels: [],
+            credits: [],
+            matchFields: []
+        };
+
+        // Uncheck all checkboxes in filter dropdowns
+        document.querySelectorAll('[id^="deep-search-filter-"] input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+
+        updateDeepSearchFilterUI();
+
+        // Re-run search without filters
+        if (deepSearchState.query.length >= 3) {
+            deepSearchState.offset = 0;
+            deepSearchState.results = [];
+            performDeepSearch();
+        }
+    };
+
+    // Toggle syntax help
+    window.toggleDeepSearchSyntaxHelp = function() {
+        const helpDiv = document.getElementById('deep-search-syntax-help');
+        if (helpDiv) {
+            helpDiv.classList.toggle('hidden');
+        }
+    };
 
     async function performDeepSearch() {
         if (deepSearchState.loading) return;
@@ -9966,6 +10303,29 @@ window.startFeatureTour = function() {
                 limit: deepSearchState.limit,
                 offset: deepSearchState.offset
             });
+
+            // Add filter parameters
+            if (deepSearchState.filters.types.length > 0) {
+                params.set('types', deepSearchState.filters.types.join(','));
+            }
+            if (deepSearchState.filters.colleges.length > 0) {
+                params.set('colleges', deepSearchState.filters.colleges.join(','));
+            }
+            if (deepSearchState.filters.schools.length > 0) {
+                params.set('schools', deepSearchState.filters.schools.join(','));
+            }
+            if (deepSearchState.filters.campuses.length > 0) {
+                params.set('campuses', deepSearchState.filters.campuses.join(','));
+            }
+            if (deepSearchState.filters.levels.length > 0) {
+                params.set('levels', deepSearchState.filters.levels.join(','));
+            }
+            if (deepSearchState.filters.credits.length > 0) {
+                params.set('credits', deepSearchState.filters.credits.join(','));
+            }
+            if (deepSearchState.filters.matchFields.length > 0) {
+                params.set('matchFields', deepSearchState.filters.matchFields.join(','));
+            }
 
             const response = await axios.get(`/search/all?${params}`);
             const data = response.data;

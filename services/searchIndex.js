@@ -1,11 +1,13 @@
 /**
  * Deep Search Index Manager
  * Uses FlexSearch for fast full-text search across programmes and modules
+ * Supports advanced query syntax: exact phrases, AND/OR, exclusions
  */
 
 const { Document } = require('flexsearch');
 const dataCache = require('../utils/cache');
 const path = require('path');
+const { parseQuery, matchesQueryCriteria, getFlexSearchQuery, getModuleContent, getProgrammeContent } = require('./queryParser');
 
 class SearchIndexManager {
   constructor() {
@@ -225,10 +227,16 @@ class SearchIndexManager {
   }
 
   /**
-   * Search modules
+   * Search modules with advanced query syntax and filters
+   * @param {string} query - Raw query string (supports "phrases", AND, OR, -exclude)
+   * @param {Object} options - Search options
+   * @param {string} options.year - Academic year (2024, 2025, 2026)
+   * @param {number} options.limit - Max results per page
+   * @param {number} options.offset - Pagination offset
+   * @param {Object} options.filters - Filter criteria
    */
   async searchModules(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0 } = options;
+    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
 
     const index = await this.getModuleIndex(year);
     const filePath = path.join(__dirname, `../controllers/module${year}.json`);
@@ -238,9 +246,18 @@ class SearchIndexManager {
       return { results: [], total: 0 };
     }
 
+    // Parse the query for advanced syntax
+    const parsedQuery = parseQuery(query);
+    const flexSearchQuery = getFlexSearchQuery(parsedQuery);
+
+    // If no search terms, return empty (need at least something to search)
+    if (!flexSearchQuery || flexSearchQuery.trim().length === 0) {
+      return { results: [], total: 0 };
+    }
+
     // Search across all indexed fields
-    const searchResults = index.search(query, {
-      limit: 1000, // Get more results for filtering
+    const searchResults = index.search(flexSearchQuery, {
+      limit: 2000, // Get more results for filtering
       enrich: true
     });
 
@@ -253,23 +270,66 @@ class SearchIndexManager {
         const id = typeof match === 'object' ? match.id : match;
         if (!seenIds.has(id)) {
           seenIds.add(id);
-          allMatches.push({
-            id,
-            field: fieldResult.field
-          });
+          const mod = moduleData.data[id];
+          if (mod) {
+            allMatches.push({ id, mod, field: fieldResult.field });
+          }
         }
       }
     }
 
+    // Apply advanced query filtering (exclusions, phrases, AND logic)
+    let filteredMatches = allMatches;
+    if (parsedQuery.excluded.length > 0 || parsedQuery.phrases.length > 0 ||
+        (parsedQuery.operator === 'AND' && parsedQuery.terms.length > 1)) {
+      filteredMatches = allMatches.filter(({ mod }) => {
+        const content = getModuleContent(mod);
+        return matchesQueryCriteria(null, parsedQuery, content);
+      });
+    }
+
+    // Apply result filters
+    if (Object.keys(filters).length > 0) {
+      filteredMatches = filteredMatches.filter(({ mod }) => {
+        // Filter by schools
+        if (filters.schools && filters.schools.length > 0) {
+          if (!filters.schools.includes(mod.school)) return false;
+        }
+        // Filter by colleges (modules may not have college directly, check via school-college mapping)
+        // For now, skip college filter for modules as they don't have direct college field
+
+        // Filter by campus
+        if (filters.campuses && filters.campuses.length > 0) {
+          if (!filters.campuses.includes(mod.campus)) return false;
+        }
+        // Filter by level
+        if (filters.levels && filters.levels.length > 0) {
+          // Level in data is like 'LC', 'LH', 'LM' - extract letter after 'L'
+          const levelCode = mod.level && mod.level.length >= 2 ? mod.level[1] : '';
+          if (!filters.levels.includes(levelCode)) return false;
+        }
+        // Filter by credits
+        if (filters.credits && filters.credits.length > 0) {
+          if (!filters.credits.includes(String(mod.credits))) return false;
+        }
+        return true;
+      });
+    }
+
+    // Filter by match fields (which fields the search matched in)
+    if (filters.matchFields && filters.matchFields.length > 0) {
+      filteredMatches = filteredMatches.filter(({ mod }) => {
+        const matches = this.findModuleMatches(mod, query);
+        return matches.some(m => filters.matchFields.includes(m.field));
+      });
+    }
+
     // Build results with snippets
     const results = [];
-    for (let i = offset; i < Math.min(offset + limit, allMatches.length); i++) {
-      const match = allMatches[i];
-      const mod = moduleData.data[match.id];
+    for (let i = offset; i < Math.min(offset + limit, filteredMatches.length); i++) {
+      const { mod } = filteredMatches[i];
 
-      if (!mod) continue;
-
-      // Find matches and generate snippets
+      // Find matches and generate snippets using original query for highlighting
       const matches = this.findModuleMatches(mod, query);
 
       results.push({
@@ -289,15 +349,21 @@ class SearchIndexManager {
 
     return {
       results,
-      total: allMatches.length
+      total: filteredMatches.length
     };
   }
 
   /**
-   * Search programmes
+   * Search programmes with advanced query syntax and filters
+   * @param {string} query - Raw query string (supports "phrases", AND, OR, -exclude)
+   * @param {Object} options - Search options
+   * @param {string} options.year - Academic year (2024, 2025, 2026)
+   * @param {number} options.limit - Max results per page
+   * @param {number} options.offset - Pagination offset
+   * @param {Object} options.filters - Filter criteria
    */
   async searchProgrammes(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0 } = options;
+    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
 
     const index = await this.getProgrammeIndex(year);
     const filePath = path.join(__dirname, `../controllers/prog${year}.json`);
@@ -307,9 +373,18 @@ class SearchIndexManager {
       return { results: [], total: 0 };
     }
 
+    // Parse the query for advanced syntax
+    const parsedQuery = parseQuery(query);
+    const flexSearchQuery = getFlexSearchQuery(parsedQuery);
+
+    // If no search terms, return empty
+    if (!flexSearchQuery || flexSearchQuery.trim().length === 0) {
+      return { results: [], total: 0 };
+    }
+
     // Search across all indexed fields
-    const searchResults = index.search(query, {
-      limit: 1000,
+    const searchResults = index.search(flexSearchQuery, {
+      limit: 2000,
       enrich: true
     });
 
@@ -322,23 +397,61 @@ class SearchIndexManager {
         const id = typeof match === 'object' ? match.id : match;
         if (!seenIds.has(id)) {
           seenIds.add(id);
-          allMatches.push({
-            id,
-            field: fieldResult.field
-          });
+          const prog = progData.data[id];
+          if (prog) {
+            allMatches.push({ id, prog, field: fieldResult.field });
+          }
         }
       }
     }
 
+    // Apply advanced query filtering (exclusions, phrases, AND logic)
+    let filteredMatches = allMatches;
+    if (parsedQuery.excluded.length > 0 || parsedQuery.phrases.length > 0 ||
+        (parsedQuery.operator === 'AND' && parsedQuery.terms.length > 1)) {
+      filteredMatches = allMatches.filter(({ prog }) => {
+        const content = getProgrammeContent(prog);
+        return matchesQueryCriteria(null, parsedQuery, content);
+      });
+    }
+
+    // Apply result filters
+    if (Object.keys(filters).length > 0) {
+      filteredMatches = filteredMatches.filter(({ prog }) => {
+        // Filter by colleges
+        if (filters.colleges && filters.colleges.length > 0) {
+          if (!filters.colleges.includes(prog.college)) return false;
+        }
+        // Filter by schools
+        if (filters.schools && filters.schools.length > 0) {
+          if (!filters.schools.includes(prog.school)) return false;
+        }
+        // Filter by campus
+        if (filters.campuses && filters.campuses.length > 0) {
+          if (!filters.campuses.includes(prog.campus)) return false;
+        }
+        // Filter by mode
+        if (filters.modes && filters.modes.length > 0) {
+          if (!filters.modes.includes(prog.mode)) return false;
+        }
+        return true;
+      });
+    }
+
+    // Filter by match fields (which fields the search matched in)
+    if (filters.matchFields && filters.matchFields.length > 0) {
+      filteredMatches = filteredMatches.filter(({ prog }) => {
+        const matches = this.findProgrammeMatches(prog, query);
+        return matches.some(m => filters.matchFields.includes(m.field));
+      });
+    }
+
     // Build results with snippets
     const results = [];
-    for (let i = offset; i < Math.min(offset + limit, allMatches.length); i++) {
-      const match = allMatches[i];
-      const prog = progData.data[match.id];
+    for (let i = offset; i < Math.min(offset + limit, filteredMatches.length); i++) {
+      const { prog } = filteredMatches[i];
 
-      if (!prog) continue;
-
-      // Find matches and generate snippets
+      // Find matches and generate snippets using original query
       const matches = this.findProgrammeMatches(prog, query);
 
       results.push({
@@ -358,20 +471,27 @@ class SearchIndexManager {
 
     return {
       results,
-      total: allMatches.length
+      total: filteredMatches.length
     };
   }
 
   /**
-   * Combined search across modules and programmes
+   * Combined search across modules and programmes with filters
+   * @param {string} query - Raw query string (supports "phrases", AND, OR, -exclude)
+   * @param {Object} options - Search options including filters and type filter
    */
   async searchAll(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0 } = options;
+    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
 
-    // Search both in parallel
+    // Check if type filter limits to one type
+    const typeFilter = filters.types || [];
+    const searchModules = typeFilter.length === 0 || typeFilter.includes('module');
+    const searchProgrammes = typeFilter.length === 0 || typeFilter.includes('programme');
+
+    // Search both in parallel (or just one if type filtered)
     const [moduleResults, programmeResults] = await Promise.all([
-      this.searchModules(query, { year, limit: 500, offset: 0 }),
-      this.searchProgrammes(query, { year, limit: 500, offset: 0 })
+      searchModules ? this.searchModules(query, { year, limit: 1000, offset: 0, filters }) : { results: [], total: 0 },
+      searchProgrammes ? this.searchProgrammes(query, { year, limit: 1000, offset: 0, filters }) : { results: [], total: 0 }
     ]);
 
     // Interleave results (alternate between programmes and modules for variety)

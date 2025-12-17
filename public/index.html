@@ -1604,7 +1604,7 @@
                                     <input
                                         type="text"
                                         id="deep-search-input"
-                                        placeholder="Search for keywords across all content (min 3 characters)..."
+                                        placeholder='Search keywords, "exact phrase", semester 1 AND semester 2, -exclude...'
                                         class="w-full px-4 py-3 pl-12 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
                                         aria-label="Deep search input"
                                     />
@@ -1612,6 +1612,11 @@
                                     <div id="deep-search-spinner" class="hidden absolute right-4 top-3.5">
                                         <div class="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
                                     </div>
+                                </div>
+                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <button type="button" onclick="toggleDeepSearchSyntaxHelp()" class="hover:text-indigo-600 dark:hover:text-indigo-400 underline">
+                                        Advanced search syntax
+                                    </button>
                                 </div>
                             </div>
                             <div class="w-full md:w-48">
@@ -1634,6 +1639,142 @@
                                     <option value="term">Academic Year Spec</option>
                                 </select>
                             </div>
+                        </div>
+                        <!-- Search Syntax Help -->
+                        <div id="deep-search-syntax-help" class="hidden mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
+                            <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Search Syntax</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-600 dark:text-gray-300">
+                                <div><code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">"exact phrase"</code> - Match exact phrase</div>
+                                <div><code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">semester 1 AND semester 2</code> - Both terms required</div>
+                                <div><code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">semester 1 OR semester 2</code> - Either term (default)</div>
+                                <div><code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">-exclude</code> - Exclude results with this term</div>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Example: <code class="bg-gray-200 dark:bg-gray-600 px-1 rounded">"machine learning" AND python -java</code></p>
+                        </div>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
+
+                            <!-- Type Filter -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('type')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-type-btn">
+                                    <span>Type</span>
+                                    <span id="deep-search-filter-type-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-type-dropdown" class="hidden absolute z-20 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                        <input type="checkbox" value="programme" onchange="updateDeepSearchFilter('types', 'programme')"
+                                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" id="deep-search-filter-type-programme">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Programmes</span>
+                                    </label>
+                                    <label class="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                        <input type="checkbox" value="module" onchange="updateDeepSearchFilter('types', 'module')"
+                                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" id="deep-search-filter-type-module">
+                                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Modules</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- College Filter -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('college')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-college-btn">
+                                    <span>College</span>
+                                    <span id="deep-search-filter-college-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-college-dropdown" class="hidden absolute z-20 mt-1 w-72 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- School Filter -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('school')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-school-btn">
+                                    <span>School</span>
+                                    <span id="deep-search-filter-school-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-school-dropdown" class="hidden absolute z-20 mt-1 w-72 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Campus Filter -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('campus')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-campus-btn">
+                                    <span>Campus</span>
+                                    <span id="deep-search-filter-campus-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-campus-dropdown" class="hidden absolute z-20 mt-1 w-48 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Level Filter (Modules) -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('level')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-level-btn">
+                                    <span>Level</span>
+                                    <span id="deep-search-filter-level-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-level-dropdown" class="hidden absolute z-20 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Credits Filter (Modules) -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('credits')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-credits-btn">
+                                    <span>Credits</span>
+                                    <span id="deep-search-filter-credits-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-credits-dropdown" class="hidden absolute z-20 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Match Field Filter -->
+                            <div class="relative">
+                                <button type="button" onclick="toggleDeepSearchFilterDropdown('matchField')"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        id="deep-search-filter-matchField-btn">
+                                    <span>Match Field</span>
+                                    <span id="deep-search-filter-matchField-count" class="hidden px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full"></span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                </button>
+                                <div id="deep-search-filter-matchField-dropdown" class="hidden absolute z-20 mt-1 w-56 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Clear Filters Button -->
+                            <button type="button" onclick="clearDeepSearchFilters()" id="deep-search-clear-filters"
+                                    class="hidden ml-auto px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                Clear All Filters
+                            </button>
+                        </div>
+
+                        <!-- Active Filters Display -->
+                        <div id="deep-search-active-filters" class="hidden flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                            <!-- Active filter tags populated by JavaScript -->
                         </div>
                     </div>
 
