@@ -7,7 +7,19 @@
 const { Document } = require('flexsearch');
 const dataCache = require('../utils/cache');
 const path = require('path');
+const fs = require('fs');
 const { parseQuery, matchesQueryCriteria, getFlexSearchQuery, getModuleContent, getProgrammeContent } = require('./queryParser');
+
+// School-to-college mapping for modules (cached)
+let schoolToCollegeMapping = null;
+function getSchoolToCollegeMapping() {
+  if (!schoolToCollegeMapping) {
+    const mappingPath = path.join(__dirname, '../controllers/school-college-mapping.json');
+    const mappingData = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+    schoolToCollegeMapping = mappingData.mapping;
+  }
+  return schoolToCollegeMapping;
+}
 
 class SearchIndexManager {
   constructor() {
@@ -295,9 +307,12 @@ class SearchIndexManager {
         if (filters.schools && filters.schools.length > 0) {
           if (!filters.schools.includes(mod.school)) return false;
         }
-        // Filter by colleges (modules may not have college directly, check via school-college mapping)
-        // For now, skip college filter for modules as they don't have direct college field
-
+        // Filter by colleges (derive from school using mapping)
+        if (filters.colleges && filters.colleges.length > 0) {
+          const mapping = getSchoolToCollegeMapping();
+          const moduleCollege = mapping[mod.school] || '';
+          if (!filters.colleges.includes(moduleCollege)) return false;
+        }
         // Filter by campus
         if (filters.campuses && filters.campuses.length > 0) {
           if (!filters.campuses.includes(mod.campus)) return false;
@@ -326,6 +341,7 @@ class SearchIndexManager {
 
     // Build results with snippets
     const results = [];
+    const collegeMapping = getSchoolToCollegeMapping();
     for (let i = offset; i < Math.min(offset + limit, filteredMatches.length); i++) {
       const { mod } = filteredMatches[i];
 
@@ -337,6 +353,7 @@ class SearchIndexManager {
         code: mod.code,
         title: mod.title,
         school: mod.school,
+        college: collegeMapping[mod.school] || '',
         dept: mod.dept,
         level: mod.level,
         credits: mod.credits,

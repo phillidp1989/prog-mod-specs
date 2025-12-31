@@ -5,6 +5,7 @@
  */
 
 const searchIndexManager = require('../services/searchIndex');
+const { normalizeResponse } = require('../utils/encodingNormalizer');
 
 /**
  * Parse filter parameters from query string
@@ -111,7 +112,7 @@ const deepSearchAll = async (req, res) => {
       filters
     });
 
-    res.json({
+    res.json(normalizeResponse({
       success: true,
       query: q.trim(),
       year,
@@ -120,7 +121,7 @@ const deepSearchAll = async (req, res) => {
       filters: Object.keys(filters).length > 0 ? filters : undefined,
       total: results.total,
       results: results.results
-    });
+    }));
 
   } catch (error) {
     console.error('Deep search error:', error);
@@ -172,7 +173,7 @@ const deepSearchModules = async (req, res) => {
       filters
     });
 
-    res.json({
+    res.json(normalizeResponse({
       success: true,
       query: q.trim(),
       year,
@@ -181,7 +182,7 @@ const deepSearchModules = async (req, res) => {
       filters: Object.keys(filters).length > 0 ? filters : undefined,
       total: results.total,
       results: results.results
-    });
+    }));
 
   } catch (error) {
     console.error('Module search error:', error);
@@ -233,7 +234,7 @@ const deepSearchProgrammes = async (req, res) => {
       filters
     });
 
-    res.json({
+    res.json(normalizeResponse({
       success: true,
       query: q.trim(),
       year,
@@ -242,7 +243,7 @@ const deepSearchProgrammes = async (req, res) => {
       filters: Object.keys(filters).length > 0 ? filters : undefined,
       total: results.total,
       results: results.results
-    });
+    }));
 
   } catch (error) {
     console.error('Programme search error:', error);

@@ -200,6 +200,74 @@
             }
         }
 
+        /* Catalogue list view styles */
+        .catalogue-list-row {
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .catalogue-list-row:hover {
+            background-color: rgba(121, 22, 255, 0.05);
+        }
+
+        .dark .catalogue-list-row:hover {
+            background-color: rgba(159, 117, 255, 0.1);
+        }
+
+        .catalogue-list-row.selected {
+            background-color: rgba(121, 22, 255, 0.1);
+        }
+
+        .dark .catalogue-list-row.selected {
+            background-color: rgba(159, 117, 255, 0.15);
+        }
+
+        /* Compare/Diff highlighting styles */
+        .diff-added {
+            background-color: rgba(34, 197, 94, 0.15);
+            border-left: 3px solid #22c55e;
+            padding-left: 8px;
+            margin: 2px 0;
+        }
+
+        .diff-removed {
+            background-color: rgba(239, 68, 68, 0.15);
+            border-left: 3px solid #ef4444;
+            padding-left: 8px;
+            margin: 2px 0;
+            text-decoration: line-through;
+            opacity: 0.8;
+        }
+
+        .diff-changed {
+            background-color: rgba(234, 179, 8, 0.15);
+            border-left: 3px solid #eab308;
+            padding-left: 8px;
+            margin: 2px 0;
+        }
+
+        .diff-unchanged {
+            color: #6b7280;
+            padding-left: 11px;
+            margin: 2px 0;
+        }
+
+        .dark .diff-added {
+            background-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .dark .diff-removed {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .dark .diff-changed {
+            background-color: rgba(234, 179, 8, 0.2);
+        }
+
+        .dark .diff-unchanged {
+            color: #9ca3af;
+        }
+
         /* Driver.js custom styling to match our theme */
         .driver-popover {
             background-color: var(--tw-prose-body);
@@ -403,6 +471,13 @@
                         class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
                         <i data-lucide="grid" class="w-4 h-4"></i>
                         <span>Catalogue</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'compare'"
+                        :class="activeTab === 'compare' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                        class="py-4 px-6 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2">
+                        <i data-lucide="git-compare" class="w-4 h-4"></i>
+                        <span>Compare</span>
                     </button>
                     <button
                         @click="activeTab = 'deepsearch'"
@@ -1500,9 +1575,39 @@
                             </div>
                         </div>
 
-                        <!-- Result Count -->
-                        <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                            <span id="catalogue-result-count">Loading...</span>
+                        <!-- Result Count and View Controls -->
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                <span id="catalogue-result-count">Loading...</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <!-- View Toggle -->
+                                <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden" role="group" aria-label="View mode">
+                                    <button onclick="window.setCatalogueViewMode('grid')"
+                                            id="view-grid-btn"
+                                            class="px-3 py-1.5 bg-primary-600 text-white flex items-center gap-1.5 text-sm font-medium transition-colors"
+                                            aria-pressed="true"
+                                            title="Grid view">
+                                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                                        <span class="hidden sm:inline">Grid</span>
+                                    </button>
+                                    <button onclick="window.setCatalogueViewMode('list')"
+                                            id="view-list-btn"
+                                            class="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center gap-1.5 text-sm font-medium transition-colors"
+                                            aria-pressed="false"
+                                            title="List view">
+                                        <i data-lucide="list" class="w-4 h-4"></i>
+                                        <span class="hidden sm:inline">List</span>
+                                    </button>
+                                </div>
+                                <!-- Export Button -->
+                                <button onclick="window.exportCatalogueList()"
+                                        class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium transition-colors"
+                                        title="Export filtered list to Excel">
+                                    <i data-lucide="download" class="w-4 h-4"></i>
+                                    <span class="hidden sm:inline">Export</span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Active Filter Badges -->
@@ -1537,6 +1642,20 @@
                         <!-- Grid Content (will be populated by JavaScript) -->
                         <div id="catalogue-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 hidden"></div>
 
+                        <!-- List View Content (will be populated by JavaScript) -->
+                        <div id="catalogue-list" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead id="catalogue-list-header" class="bg-gray-50 dark:bg-gray-700">
+                                        <!-- Header will be populated by JavaScript -->
+                                    </thead>
+                                    <tbody id="catalogue-list-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        <!-- Rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Empty State -->
                         <div id="catalogue-empty" class="hidden text-center py-16">
                             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
@@ -1569,6 +1688,104 @@
                                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compare Tab Content -->
+            <div x-show="activeTab === 'compare'" class="p-6" style="display: none;">
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                                    Compare Specs Across Years
+                                </h2>
+                                <p class="text-gray-600 dark:text-gray-400">
+                                    Compare the same programme or module across different academic years to see what changed
+                                </p>
+                            </div>
+                            <div class="hidden md:block">
+                                <i data-lucide="git-compare" class="w-16 h-16 text-purple-400 dark:text-purple-600 opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selection Controls -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <!-- Type Toggle -->
+                        <div class="flex flex-wrap items-center gap-4 mb-6">
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Type:</span>
+                                <div class="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                                    <button id="compare-type-programme" onclick="setCompareType('programme')"
+                                            class="px-4 py-2 text-sm font-medium bg-purple-500 text-white transition-colors">
+                                        Programme
+                                    </button>
+                                    <button id="compare-type-module" onclick="setCompareType('module')"
+                                            class="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                        Module
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Cohort Type (for programmes only) -->
+                            <div id="compare-cohort-type-container" class="flex items-center gap-4">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Spec Type:</span>
+                                <div class="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                                    <button id="compare-cohort-type-cohort" onclick="setCompareCohortType('cohort')"
+                                            class="px-4 py-2 text-sm font-medium bg-purple-500 text-white transition-colors">
+                                        Cohort
+                                    </button>
+                                    <button id="compare-cohort-type-term" onclick="setCompareCohortType('term')"
+                                            class="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                        Term
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spec Selector -->
+                        <div class="mb-6 relative">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Select <span id="compare-type-label">Programme</span>:
+                            </label>
+                            <input type="text" id="compare-spec-input"
+                                   class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                   placeholder="Start typing to search..."
+                                   autocomplete="off">
+                            <div id="compare-spec-dropdown" class="hidden absolute z-50 w-full max-h-60 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg mt-1"></div>
+                        </div>
+
+                        <!-- Year Selectors -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Year A (Base):</label>
+                                <select id="compare-year-a" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="2025">2025/26</option>
+                                    <option value="2026" selected>2026/27</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Year B (Compare):</label>
+                                <select id="compare-year-b" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="2025" selected>2025/26</option>
+                                    <option value="2026">2026/27</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Compare Button -->
+                        <button onclick="executeComparison()"
+                                class="w-full md:w-auto px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <i data-lucide="git-compare" class="w-5 h-5"></i>
+                            Compare Specs
+                        </button>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="compare-results" class="hidden">
+                        <!-- Populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -1781,8 +1998,15 @@
                     <!-- Results Summary -->
                     <div id="deep-search-summary" class="hidden">
                         <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                            <span id="deep-search-count">Found 0 results</span>
-                            <span id="deep-search-breakdown"></span>
+                            <div class="flex items-center gap-4">
+                                <span id="deep-search-count">Found 0 results</span>
+                                <span id="deep-search-breakdown"></span>
+                            </div>
+                            <button onclick="exportAllDeepSearchToExcel()" id="deep-search-export-btn"
+                                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                                Export All
+                            </button>
                         </div>
                     </div>
 
@@ -2546,6 +2770,8 @@
     <script src="https://unpkg.com/pizzip@3.0.6/dist/pizzip-utils.js"></script>
     <!-- JSZip for bulk document generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Fuse.js for fuzzy search -->
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
     <!-- Driver.js for feature tours -->

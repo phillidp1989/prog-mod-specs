@@ -4,6 +4,7 @@ const path = require("path");
 const csv = require("csvtojson");
 const dataCache = require('../utils/cache');
 const { sendModuleChangeNotification } = require('../services/emailService');
+const { normalizeResponse } = require('../utils/encodingNormalizer');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -111,6 +112,81 @@ const moduleData = async (req, res, next) => {
       final[0].matchedBoolean = true;
     }
 
+    // Data quality flags
+    final[0].qualityFlags = [];
+
+    // Check: TBC Module Lead
+    const tbcPatterns = ['tbc', 'tbd', 'to be confirmed', 'to be announced', 'tba', ''];
+    if (!final[0].lead || tbcPatterns.includes(final[0].lead.toLowerCase().trim())) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'TBC_LEAD',
+            message: 'Module Lead is TBC or not specified'
+        });
+    }
+
+    // Check: Missing Learning Outcomes
+    if (!final[0].outcomes || final[0].outcomes.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_OUTCOMES',
+            message: 'No learning outcomes specified'
+        });
+    } else if (final[0].outcomes.length < 3) {
+        final[0].qualityFlags.push({
+            type: 'info',
+            code: 'FEW_OUTCOMES',
+            message: `Only ${final[0].outcomes.length} learning outcome(s) specified`
+        });
+    }
+
+    // Check: Missing Assessment Methods
+    if (!final[0].summative || final[0].summative.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_ASSESSMENT',
+            message: 'No summative assessment methods specified'
+        });
+    }
+
+    // Check: Missing Description
+    if (!final[0].description || final[0].description.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'info',
+            code: 'NO_DESCRIPTION',
+            message: 'No module description provided'
+        });
+    }
+
+    // Check: No Contact Hours
+    const contactFields = ['lecture', 'seminar', 'tutorial', 'project', 'demo',
+                           'practical', 'workshop', 'fieldwork', 'visits', 'work',
+                           'placement', 'independent', 'abroad'];
+    const totalContact = contactFields.reduce((sum, f) => sum + (parseInt(final[0][f]) || 0), 0);
+    if (totalContact === 0) {
+        final[0].qualityFlags.push({
+            type: 'info',
+            code: 'NO_CONTACT_HOURS',
+            message: 'No contact hours breakdown specified'
+        });
+    }
+
+    // Check: Semester Not Determined (blank or contains "or")
+    const semester = final[0].semester || '';
+    if (!semester.trim()) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_SEMESTER',
+            message: 'Semester not specified'
+        });
+    } else if (semester.toLowerCase().includes(' or ')) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'SEMESTER_UNDETERMINED',
+            message: `Semester not yet determined: "${semester}"`
+        });
+    }
+
     // Determine college value: use module's college if available, otherwise look up from mapping
     let collegeToUse = final[0].college;
     if (!collegeToUse && final[0].school) {
@@ -148,7 +224,7 @@ const moduleData = async (req, res, next) => {
         // Don't fail the request if Supabase insert fails
       });
 
-    res.status(200).json(final[0]);
+    res.status(200).json(normalizeResponse(final[0]));
   } catch (error) {
     console.error('Error in moduleData:', error);
     next(error);
@@ -182,12 +258,13 @@ const moduleAutocompleteData = async (req, res, next) => {
         camp = "";
       }
 
-      // Include semester, school, college, and credits for filtering and catalogue cards
+      // Include semester, school, college, credits, and level for filtering and catalogue cards
       const semester = mod["Web Semester Desc"] || "Not Yet Specified";
       const school = mod["Division Desc"] || "";
       const college = mod["College Desc"] || "";
       const credits = mod["Credit Hours"] || "20"; // Extract credits from CSV
-      moduleInfo = `${mod["Course Number"]} - ${mod["Course Long Desc"]}${camp} - ${semester} [${school}] {${college}} |${credits}|`;
+      const level = mod["Attribute Level Code"] || ""; // Extract level code (LC, LI, LH, LM, LD)
+      moduleInfo = `${mod["Course Number"]} - ${mod["Course Long Desc"]}${camp} - ${semester} [${school}] {${college}} |${credits}| <${level}>`;
       initialData[moduleInfo] = null;
     });
 
@@ -195,7 +272,7 @@ const moduleAutocompleteData = async (req, res, next) => {
     moduleAutocompleteCache = initialData;
     moduleAutocompleteCacheTime = Date.now();
 
-    res.status(200).json(initialData);
+    res.status(200).json(normalizeResponse(initialData));
   } catch (error) {
     console.error('Error in moduleAutocompleteData:', error);
     next(error);

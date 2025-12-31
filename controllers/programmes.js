@@ -3,6 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const path = require("path");
 const csv = require("csvtojson");
 const dataCache = require('../utils/cache');
+const { normalizeResponse } = require('../utils/encodingNormalizer');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
@@ -147,6 +148,51 @@ const programmeData = async (req, res, next) => {
         final[0].matchedBoolean = true;
       }
 
+    // Data quality flags
+    final[0].qualityFlags = [];
+
+    // Check: Missing Aims
+    if (!final[0].aims || final[0].aims.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_AIMS',
+            message: 'No programme aims specified'
+        });
+    } else if (final[0].aims.length < 3) {
+        final[0].qualityFlags.push({
+            type: 'info',
+            code: 'FEW_AIMS',
+            message: `Only ${final[0].aims.length} programme aim(s) specified`
+        });
+    }
+
+    // Check: Missing Knowledge Outcomes
+    if (!final[0].knowledge?.outcome || final[0].knowledge.outcome.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_KNOWLEDGE_OUTCOMES',
+            message: 'No knowledge & understanding outcomes specified'
+        });
+    }
+
+    // Check: Missing Skills Outcomes
+    if (!final[0].skills?.outcome || final[0].skills.outcome.length === 0) {
+        final[0].qualityFlags.push({
+            type: 'warning',
+            code: 'NO_SKILLS_OUTCOMES',
+            message: 'No skills & other attributes outcomes specified'
+        });
+    }
+
+    // Check: Missing Benchmark Statement
+    if (!final[0].benchmark || !final[0].benchmark.trim()) {
+        final[0].qualityFlags.push({
+            type: 'info',
+            code: 'NO_BENCHMARK',
+            message: 'No benchmark statement specified'
+        });
+    }
+
     // Insert data into Supabase with proper error handling
     async function insertData() {
       const { data, error } = await supabase
@@ -173,7 +219,7 @@ const programmeData = async (req, res, next) => {
         // Don't fail the request if Supabase insert fails
       });
 
-    res.status(200).json(final[0]);
+    res.status(200).json(normalizeResponse(final[0]));
   } catch (error) {
     console.error('Error in programmeData:', error);
     next(error);
@@ -392,7 +438,7 @@ const autocompleteData = async (req, res, next) => {
     autocompleteCache = initialData;
     autocompleteCacheTime = Date.now();
 
-    res.status(200).json(initialData);
+    res.status(200).json(normalizeResponse(initialData));
   } catch (error) {
     console.error('Error in autocompleteData:', error);
     next(error);

@@ -1488,6 +1488,9 @@ window.generateProgrammePreview = function(data, cohort, year) {
                 </ul>
             </div>
             ` : ''}
+
+            <!-- Data Quality Flags -->
+            ${renderQualityFlags(data.qualityFlags)}
         </div>
     `;
 }
@@ -1954,6 +1957,9 @@ window.generateModulePreview = function(data, year) {
                 </ul>
             </div>
             ` : ''}
+
+            <!-- Data Quality Flags -->
+            ${renderQualityFlags(data.qualityFlags)}
         </div>
     `;
 }
@@ -6745,6 +6751,7 @@ window.catalogueState = {
     selectedCohortType: 'cohort', // 'cohort' or 'term' for programme specs
     selectedProgrammeYear: '2025', // Academic year for programme specs
     selectedModuleYear: '2025', // Academic year for module specs
+    viewMode: 'grid', // 'grid' or 'list' - controls catalogue display mode
 
     // Bulk generation properties
     selectedItems: new Set(), // Set of selected item codes (prog/mod codes)
@@ -6972,11 +6979,11 @@ async function loadModuleCatalogueData() {
 
         // Convert autocomplete data to array of objects
         const modules = Object.keys(autocompleteData).map(key => {
-            // Parse the autocomplete string format: "41822 - Introduction to Programming (Birmingham) - Semester 1 [School] {College} |20|"
-            const match = key.match(/^([A-Z0-9\s]+?)\s+-\s+(.+?)\s+(?:\((.+?)\))?\s*-\s*(.+?)(?:\s+\[(.+?)\])?(?:\s+\{(.+?)\})?(?:\s+\|(.+?)\|)?$/);
+            // Parse the autocomplete string format: "41822 - Introduction to Programming (Birmingham) - Semester 1 [School] {College} |20| <LI>"
+            const match = key.match(/^([A-Z0-9\s]+?)\s+-\s+(.+?)\s+(?:\((.+?)\))?\s*-\s*(.+?)(?:\s+\[(.+?)\])?(?:\s+\{(.+?)\})?(?:\s+\|(.+?)\|)?(?:\s+<(.+?)>)?$/);
 
             if (match) {
-                const [, code, title, campus, semester, school, college, credits] = match;
+                const [, code, title, campus, semester, school, college, credits, level] = match;
                 return {
                     code: code.trim(),
                     title: title.trim(),
@@ -6984,7 +6991,8 @@ async function loadModuleCatalogueData() {
                     semester: semester.trim(),
                     school: school ? school.trim() : '',
                     college: college ? college.trim() : '',
-                    credits: credits ? credits.trim() : '20', // Extract credits from the string
+                    credits: credits ? credits.trim() : '20',
+                    level: level ? level.trim() : '', // Extract level code (LC, LI, LH, LM, LD)
                     fullText: key // For search
                 };
             }
@@ -7179,8 +7187,8 @@ function applyModuleCatalogueFilters(data) {
 
         // Level filter
         if (filters.levels && filters.levels.length > 0) {
-            // Module code first character indicates level (C/I/H/D/M)
-            const moduleLevel = mod.code ? mod.code.charAt(0).toUpperCase() : '';
+            // Level is stored as "LI", "LH", "LM", "LC", "LD" - extract the letter after "L"
+            const moduleLevel = mod.level && mod.level.length >= 2 ? mod.level.charAt(1).toUpperCase() : '';
             if (!filters.levels.includes(moduleLevel)) {
                 return false;
             }
@@ -7287,17 +7295,27 @@ function renderCatalogue() {
 
     if (loadingEl) loadingEl.classList.add('hidden');
 
+    // Get list element as well for view mode handling
+    const listEl = document.getElementById('catalogue-list');
+
     if (catalogueState.displayData.length === 0) {
         // Update empty state message based on context
         updateEmptyStateMessage();
 
-        // Show empty state
+        // Show empty state, hide both grid and list
         if (gridEl) gridEl.classList.add('hidden');
+        if (listEl) listEl.classList.add('hidden');
         if (emptyEl) emptyEl.classList.remove('hidden');
         if (paginationEl) paginationEl.classList.add('hidden');
     } else {
-        // Show grid
-        if (gridEl) gridEl.classList.remove('hidden');
+        // Show grid or list based on viewMode
+        if (catalogueState.viewMode === 'list') {
+            if (gridEl) gridEl.classList.add('hidden');
+            if (listEl) listEl.classList.remove('hidden');
+        } else {
+            if (gridEl) gridEl.classList.remove('hidden');
+            if (listEl) listEl.classList.add('hidden');
+        }
         if (emptyEl) emptyEl.classList.add('hidden');
         if (paginationEl) paginationEl.classList.remove('hidden');
     }
@@ -7309,18 +7327,312 @@ function renderCatalogue() {
 }
 
 /**
- * Render catalogue cards
+ * Render catalogue cards or list based on viewMode
  */
 function renderCatalogueCards() {
     const gridEl = document.getElementById('catalogue-grid');
-    if (!gridEl) return;
+    const listEl = document.getElementById('catalogue-list');
+    if (!gridEl || !listEl) return;
 
-    if (catalogueState.type === 'programmes') {
-        gridEl.innerHTML = catalogueState.displayData.map(prog => renderProgrammeCard(prog)).join('');
+    if (catalogueState.viewMode === 'list') {
+        // Hide grid, show list
+        gridEl.classList.add('hidden');
+        listEl.classList.remove('hidden');
+        renderListView();
     } else {
-        gridEl.innerHTML = catalogueState.displayData.map(mod => renderModuleCard(mod)).join('');
+        // Hide list, show grid
+        listEl.classList.add('hidden');
+        gridEl.classList.remove('hidden');
+
+        if (catalogueState.type === 'programmes') {
+            gridEl.innerHTML = catalogueState.displayData.map(prog => renderProgrammeCard(prog)).join('');
+        } else {
+            gridEl.innerHTML = catalogueState.displayData.map(mod => renderModuleCard(mod)).join('');
+        }
     }
 }
+
+/**
+ * Render list view table
+ */
+function renderListView() {
+    const headerEl = document.getElementById('catalogue-list-header');
+    const bodyEl = document.getElementById('catalogue-list-body');
+    if (!headerEl || !bodyEl) return;
+
+    const isProgrammes = catalogueState.type === 'programmes';
+    const inSelectionMode = catalogueState.selectionMode;
+
+    // Generate header
+    if (isProgrammes) {
+        headerEl.innerHTML = `
+            <tr>
+                ${inSelectionMode ? '<th class="px-3 py-3 text-center w-10"><input type="checkbox" onchange="window.toggleSelectAllVisible(this.checked)" class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"></th>' : ''}
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Code</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Title</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">College</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">School</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">Campus</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">Mode</th>
+            </tr>
+        `;
+    } else {
+        headerEl.innerHTML = `
+            <tr>
+                ${inSelectionMode ? '<th class="px-3 py-3 text-center w-10"><input type="checkbox" onchange="window.toggleSelectAllVisible(this.checked)" class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"></th>' : ''}
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Code</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Title</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">School</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">Level</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">Credits</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider hidden xl:table-cell">Semester</th>
+            </tr>
+        `;
+    }
+
+    // Generate rows
+    if (isProgrammes) {
+        bodyEl.innerHTML = catalogueState.displayData.map(prog => {
+            const isSelected = catalogueState.selectedItems.has(prog.code);
+            const cardId = `prog-card-${prog.code.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            return `
+                <tr class="catalogue-list-row ${isSelected ? 'selected' : ''}"
+                    onclick="window.openListItemPreview('${prog.code}', 'programme')"
+                    data-code="${prog.code}">
+                    ${inSelectionMode ? `
+                        <td class="px-3 py-3 text-center" onclick="event.stopPropagation()">
+                            <input type="checkbox"
+                                   ${isSelected ? 'checked' : ''}
+                                   onchange="window.toggleItemSelection('${prog.code}', this.checked)"
+                                   class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                        </td>
+                    ` : ''}
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                            ${prog.code || ''}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">${prog.title || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden md:table-cell">${abbreviateCollege(prog.college) || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden lg:table-cell">${prog.school || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden xl:table-cell">${prog.campus || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden xl:table-cell">${prog.mode || ''}</td>
+                </tr>
+            `;
+        }).join('');
+    } else {
+        bodyEl.innerHTML = catalogueState.displayData.map(mod => {
+            const isSelected = catalogueState.selectedItems.has(mod.code);
+            return `
+                <tr class="catalogue-list-row ${isSelected ? 'selected' : ''}"
+                    onclick="window.openListItemPreview('${mod.code}', 'module')"
+                    data-code="${mod.code}">
+                    ${inSelectionMode ? `
+                        <td class="px-3 py-3 text-center" onclick="event.stopPropagation()">
+                            <input type="checkbox"
+                                   ${isSelected ? 'checked' : ''}
+                                   onchange="window.toggleItemSelection('${mod.code}', this.checked)"
+                                   class="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer">
+                        </td>
+                    ` : ''}
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                            ${mod.code || ''}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium">${mod.title || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden md:table-cell">${mod.school || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center hidden lg:table-cell">${mod.level || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 text-center hidden lg:table-cell">${mod.credits || ''}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 hidden xl:table-cell">${mod.semester || ''}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+/**
+ * Set catalogue view mode (grid or list)
+ * @param {string} mode - 'grid' or 'list'
+ */
+window.setCatalogueViewMode = function(mode) {
+    if (mode !== 'grid' && mode !== 'list') return;
+
+    catalogueState.viewMode = mode;
+
+    // Update button states
+    const gridBtn = document.getElementById('view-grid-btn');
+    const listBtn = document.getElementById('view-list-btn');
+
+    if (gridBtn && listBtn) {
+        if (mode === 'grid') {
+            gridBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-600');
+            gridBtn.classList.add('bg-primary-600', 'text-white');
+            gridBtn.setAttribute('aria-pressed', 'true');
+
+            listBtn.classList.remove('bg-primary-600', 'text-white');
+            listBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-600');
+            listBtn.setAttribute('aria-pressed', 'false');
+        } else {
+            listBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-600');
+            listBtn.classList.add('bg-primary-600', 'text-white');
+            listBtn.setAttribute('aria-pressed', 'true');
+
+            gridBtn.classList.remove('bg-primary-600', 'text-white');
+            gridBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-600');
+            gridBtn.setAttribute('aria-pressed', 'false');
+        }
+    }
+
+    // Re-render catalogue
+    renderCatalogueCards();
+
+    // Reinitialize Lucide icons
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+};
+
+/**
+ * Open preview modal for a list item
+ * @param {string} code - Item code
+ * @param {string} type - 'programme' or 'module'
+ */
+window.openListItemPreview = async function(code, type) {
+    // Show loading
+    showLoading(true, `Loading ${type} data...`, { showProgress: true });
+    updateLoadingProgress(20, 'Fetching data...');
+
+    try {
+        let data, previewHtml;
+
+        if (type === 'programme') {
+            const response = await axios.get(`/prog-data/${code}/${catalogueState.selectedCohortType}/${catalogueState.selectedProgrammeYear}`);
+            data = response.data;
+            if (!data) {
+                showNotification('Programme not found', 'error');
+                showLoading(false);
+                return;
+            }
+
+            // Store for download
+            currentPreviewData = data;
+            currentPreviewType = 'programme';
+            currentPreviewYear = catalogueState.selectedProgrammeYear;
+            currentPreviewCohort = catalogueState.selectedCohortType;
+
+            updateLoadingProgress(60, 'Generating preview...');
+            previewHtml = generateProgrammePreview(data, catalogueState.selectedCohortType, catalogueState.selectedProgrammeYear);
+        } else {
+            const response = await axios.get(`/mod-data/${code}/${catalogueState.selectedModuleYear}`);
+            data = response.data;
+            if (!data) {
+                showNotification('Module not found', 'error');
+                showLoading(false);
+                return;
+            }
+
+            // Store for download
+            currentPreviewData = data;
+            currentPreviewType = 'module';
+            currentPreviewYear = catalogueState.selectedModuleYear;
+
+            updateLoadingProgress(60, 'Generating preview...');
+            previewHtml = generateModulePreview(data, catalogueState.selectedModuleYear);
+        }
+
+        updateLoadingProgress(100, 'Opening preview...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        openPreview(previewHtml);
+        showLoading(false);
+
+    } catch (error) {
+        console.error('Error loading preview:', error);
+        showNotification('Error loading data. Please try again.', 'error');
+        showLoading(false);
+    }
+};
+
+/**
+ * Export catalogue list to Excel
+ */
+window.exportCatalogueList = function() {
+    const data = catalogueState.filteredData;
+
+    if (!data || data.length === 0) {
+        showNotification('No data to export', 'warning');
+        return;
+    }
+
+    // Check if XLSX is available
+    if (typeof XLSX === 'undefined') {
+        showNotification('Export library not loaded. Please refresh the page.', 'error');
+        return;
+    }
+
+    const isProgrammes = catalogueState.type === 'programmes';
+
+    // Map to export rows based on type
+    const rows = data.map(item => {
+        if (isProgrammes) {
+            return {
+                'Code': item.code || '',
+                'Title': item.title || '',
+                'College': item.college || '',
+                'School': item.school || '',
+                'Campus': item.campus || '',
+                'Mode': item.mode || ''
+            };
+        } else {
+            return {
+                'Code': item.code || '',
+                'Title': item.title || '',
+                'School': item.school || '',
+                'Level': item.level || '',
+                'Credits': item.credits || '',
+                'Semester': item.semester || ''
+            };
+        }
+    });
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Set column widths
+    if (isProgrammes) {
+        ws['!cols'] = [
+            { wch: 12 },  // Code
+            { wch: 60 },  // Title
+            { wch: 20 },  // College
+            { wch: 30 },  // School
+            { wch: 15 },  // Campus
+            { wch: 15 }   // Mode
+        ];
+    } else {
+        ws['!cols'] = [
+            { wch: 10 },  // Code
+            { wch: 60 },  // Title
+            { wch: 30 },  // School
+            { wch: 8 },   // Level
+            { wch: 10 },  // Credits
+            { wch: 15 }   // Semester
+        ];
+    }
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, isProgrammes ? 'Programmes' : 'Modules');
+
+    // Generate filename
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `catalogue_${catalogueState.type}_${date}.xlsx`;
+
+    // Download
+    XLSX.writeFile(wb, filename);
+
+    showNotification(`Exported ${rows.length} ${catalogueState.type} to Excel`, 'success');
+};
 
 /**
  * Abbreviate college names for pills
@@ -8145,6 +8457,33 @@ window.toggleModuleSelectionMode = function(progCode) {
             }
         }
     }
+
+    // Also check if the preview modal is open and re-render it
+    const previewModal = document.getElementById('previewModal');
+    const previewContent = document.getElementById('previewContent');
+    if (previewModal && !previewModal.classList.contains('hidden') &&
+        currentPreviewType === 'programme' &&
+        currentPreviewData &&
+        currentPreviewData.progCode === progCode) {
+
+        // Re-generate the preview HTML with updated selection mode state
+        const previewHtml = generateProgrammePreview(
+            currentPreviewData,
+            currentPreviewCohort,
+            currentPreviewYear
+        );
+
+        // Update the modal content
+        previewContent.innerHTML = previewHtml;
+
+        // Re-initialize Lucide icons
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+        // Regenerate TOC if needed
+        generateTOCFromContent();
+    }
 };
 
 /**
@@ -8478,11 +8817,13 @@ window.clearCatalogueFilters = function() {
 function showCatalogueLoading() {
     const loadingEl = document.getElementById('catalogue-loading');
     const gridEl = document.getElementById('catalogue-grid');
+    const listEl = document.getElementById('catalogue-list');
     const emptyEl = document.getElementById('catalogue-empty');
     const paginationEl = document.getElementById('catalogue-pagination');
 
     if (loadingEl) loadingEl.classList.remove('hidden');
     if (gridEl) gridEl.classList.add('hidden');
+    if (listEl) listEl.classList.add('hidden');
     if (emptyEl) emptyEl.classList.add('hidden');
     if (paginationEl) paginationEl.classList.add('hidden');
 
@@ -10290,6 +10631,217 @@ window.startFeatureTour = function() {
         }
     };
 
+    // Export search results to Excel
+    window.exportDeepSearchToExcel = function() {
+        const results = deepSearchState.results;
+        if (results.length === 0) {
+            window.showNotification?.('No results to export', 'warning');
+            return;
+        }
+
+        try {
+            // Transform results to flat rows for Excel
+            const rows = results.map(r => {
+                if (r.type === 'programme') {
+                    return {
+                        'Type': 'Programme',
+                        'Code': r.progCode || '',
+                        'Title': r.progTitle || '',
+                        'School': r.school || '',
+                        'College': r.college || '',
+                        'Campus': r.campus || '',
+                        'Mode': r.mode || '',
+                        'Level': '',
+                        'Credits': '',
+                        'Semester': '',
+                        'Module Lead': '',
+                        'Matched In': r.matches?.map(m => m.field).join(', ') || ''
+                    };
+                } else {
+                    return {
+                        'Type': 'Module',
+                        'Code': r.code || '',
+                        'Title': r.title || '',
+                        'School': r.school || '',
+                        'College': r.college || '',
+                        'Campus': r.campus || '',
+                        'Mode': '',
+                        'Level': r.level || '',
+                        'Credits': r.credits || '',
+                        'Semester': r.semester || '',
+                        'Module Lead': r.lead || '',
+                        'Matched In': r.matches?.map(m => m.field).join(', ') || ''
+                    };
+                }
+            });
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.json_to_sheet(rows);
+
+            // Set column widths for better readability
+            ws['!cols'] = [
+                { wch: 10 },  // Type
+                { wch: 15 },  // Code
+                { wch: 50 },  // Title
+                { wch: 30 },  // School
+                { wch: 30 },  // College
+                { wch: 15 },  // Campus
+                { wch: 12 },  // Mode
+                { wch: 8 },   // Level
+                { wch: 8 },   // Credits
+                { wch: 10 },  // Semester
+                { wch: 25 },  // Module Lead
+                { wch: 40 }   // Matched In
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Search Results');
+
+            // Generate filename with query and timestamp
+            const safeQuery = deepSearchState.query.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `deep-search-${safeQuery}-${timestamp}.xlsx`;
+
+            // Trigger download
+            XLSX.writeFile(wb, filename);
+
+            window.showNotification?.(`Exported ${results.length} results to Excel`, 'success');
+        } catch (error) {
+            console.error('Excel export error:', error);
+            window.showNotification?.('Failed to export to Excel', 'error');
+        }
+    };
+
+    // Export ALL search results to Excel (fetches all from API)
+    window.exportAllDeepSearchToExcel = async function() {
+        const total = deepSearchState.total?.combined || 0;
+        if (total === 0) {
+            window.showNotification?.('No results to export', 'warning');
+            return;
+        }
+
+        window.showNotification?.(`Fetching all ${total} results...`, 'info');
+
+        try {
+            const allResults = [];
+            const batchSize = 50;
+            let offset = 0;
+
+            // Build query params with current filters
+            const buildParams = (currentOffset) => {
+                const params = new URLSearchParams({
+                    q: deepSearchState.query,
+                    year: deepSearchState.year,
+                    limit: batchSize,
+                    offset: currentOffset
+                });
+
+                if (deepSearchState.filters.types.length > 0) {
+                    params.set('types', deepSearchState.filters.types.join(','));
+                }
+                if (deepSearchState.filters.colleges.length > 0) {
+                    params.set('colleges', deepSearchState.filters.colleges.join(','));
+                }
+                if (deepSearchState.filters.schools.length > 0) {
+                    params.set('schools', deepSearchState.filters.schools.join(','));
+                }
+                if (deepSearchState.filters.campuses.length > 0) {
+                    params.set('campuses', deepSearchState.filters.campuses.join(','));
+                }
+                if (deepSearchState.filters.levels.length > 0) {
+                    params.set('levels', deepSearchState.filters.levels.join(','));
+                }
+                if (deepSearchState.filters.credits.length > 0) {
+                    params.set('credits', deepSearchState.filters.credits.join(','));
+                }
+                if (deepSearchState.filters.matchFields.length > 0) {
+                    params.set('matchFields', deepSearchState.filters.matchFields.join(','));
+                }
+                return params;
+            };
+
+            // Fetch all results in batches
+            while (offset < total) {
+                const params = buildParams(offset);
+                const response = await axios.get(`/search/all?${params}`);
+                if (response.data.success) {
+                    allResults.push(...response.data.results);
+                }
+                offset += batchSize;
+            }
+
+            // Transform results to flat rows for Excel
+            const rows = allResults.map(r => {
+                if (r.type === 'programme') {
+                    return {
+                        'Type': 'Programme',
+                        'Code': r.progCode || '',
+                        'Title': r.progTitle || '',
+                        'School': r.school || '',
+                        'College': r.college || '',
+                        'Campus': r.campus || '',
+                        'Mode': r.mode || '',
+                        'Level': '',
+                        'Credits': '',
+                        'Semester': '',
+                        'Module Lead': '',
+                        'Matched In': r.matches?.map(m => m.field).join(', ') || ''
+                    };
+                } else {
+                    return {
+                        'Type': 'Module',
+                        'Code': r.code || '',
+                        'Title': r.title || '',
+                        'School': r.school || '',
+                        'College': r.college || '',
+                        'Campus': r.campus || '',
+                        'Mode': '',
+                        'Level': r.level || '',
+                        'Credits': r.credits || '',
+                        'Semester': r.semester || '',
+                        'Module Lead': r.lead || '',
+                        'Matched In': r.matches?.map(m => m.field).join(', ') || ''
+                    };
+                }
+            });
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.json_to_sheet(rows);
+
+            // Set column widths for better readability
+            ws['!cols'] = [
+                { wch: 10 },  // Type
+                { wch: 15 },  // Code
+                { wch: 50 },  // Title
+                { wch: 30 },  // School
+                { wch: 30 },  // College
+                { wch: 15 },  // Campus
+                { wch: 12 },  // Mode
+                { wch: 8 },   // Level
+                { wch: 8 },   // Credits
+                { wch: 10 },  // Semester
+                { wch: 25 },  // Module Lead
+                { wch: 40 }   // Matched In
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Search Results');
+
+            // Generate filename with query and timestamp
+            const safeQuery = deepSearchState.query.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+            const timestamp = new Date().toISOString().split('T')[0];
+            const filename = `deep-search-${safeQuery}-${timestamp}.xlsx`;
+
+            // Trigger download
+            XLSX.writeFile(wb, filename);
+
+            window.showNotification?.(`Exported ${allResults.length} results to Excel`, 'success');
+        } catch (error) {
+            console.error('Excel export error:', error);
+            window.showNotification?.('Failed to export to Excel', 'error');
+        }
+    };
+
     async function performDeepSearch() {
         if (deepSearchState.loading) return;
 
@@ -10685,3 +11237,982 @@ window.startFeatureTour = function() {
         }
     };
 })();
+
+// ========================================
+// COMPARE FUNCTIONALITY
+// ========================================
+
+/**
+ * Compare State Management
+ */
+window.compareState = {
+    type: 'programme',  // 'programme' or 'module'
+    cohortType: 'cohort', // 'cohort' or 'term' (for programmes only)
+    selectedCode: null,
+    selectedTitle: '',
+    yearA: '2026',
+    yearB: '2025',
+    specDataA: null,
+    specDataB: null,
+    isLoading: false,
+    autocompleteData: null,
+    autocompleteDataType: null // Track which type of autocomplete data is loaded
+};
+
+/**
+ * Set comparison type (programme or module)
+ */
+window.setCompareType = function(type) {
+    window.compareState.type = type;
+    window.compareState.selectedCode = null;
+    window.compareState.selectedTitle = '';
+
+    // Update UI
+    const progBtn = document.getElementById('compare-type-programme');
+    const modBtn = document.getElementById('compare-type-module');
+    const typeLabel = document.getElementById('compare-type-label');
+    const input = document.getElementById('compare-spec-input');
+    const cohortContainer = document.getElementById('compare-cohort-type-container');
+
+    if (type === 'programme') {
+        progBtn.classList.add('bg-purple-500', 'text-white');
+        progBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        modBtn.classList.remove('bg-purple-500', 'text-white');
+        modBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        typeLabel.textContent = 'Programme';
+        input.placeholder = 'Start typing programme code or title...';
+        // Show cohort type selector for programmes
+        if (cohortContainer) cohortContainer.classList.remove('hidden');
+    } else {
+        modBtn.classList.add('bg-purple-500', 'text-white');
+        modBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        progBtn.classList.remove('bg-purple-500', 'text-white');
+        progBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        typeLabel.textContent = 'Module';
+        input.placeholder = 'Start typing module code or title...';
+        // Hide cohort type selector for modules
+        if (cohortContainer) cohortContainer.classList.add('hidden');
+    }
+
+    input.value = '';
+    document.getElementById('compare-results').classList.add('hidden');
+    document.getElementById('compare-spec-dropdown').classList.add('hidden');
+};
+
+/**
+ * Set cohort type for programme comparison (cohort or term)
+ */
+window.setCompareCohortType = function(cohortType) {
+    window.compareState.cohortType = cohortType;
+
+    // Update UI
+    const cohortBtn = document.getElementById('compare-cohort-type-cohort');
+    const termBtn = document.getElementById('compare-cohort-type-term');
+
+    if (cohortType === 'cohort') {
+        cohortBtn.classList.add('bg-purple-500', 'text-white');
+        cohortBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        termBtn.classList.remove('bg-purple-500', 'text-white');
+        termBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+    } else {
+        termBtn.classList.add('bg-purple-500', 'text-white');
+        termBtn.classList.remove('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+        cohortBtn.classList.remove('bg-purple-500', 'text-white');
+        cohortBtn.classList.add('bg-white', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+    }
+
+    // Clear results when cohort type changes
+    document.getElementById('compare-results').classList.add('hidden');
+};
+
+/**
+ * Initialize compare tab autocomplete
+ */
+window.initCompareAutocomplete = function() {
+    const input = document.getElementById('compare-spec-input');
+    const dropdown = document.getElementById('compare-spec-dropdown');
+
+    if (!input || !dropdown) return;
+
+    let debounceTimer = null;
+
+    input.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const query = e.target.value.trim();
+            if (query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // Check if we need to load new autocomplete data
+                if (!window.compareState.autocompleteData || window.compareState.autocompleteDataType !== window.compareState.type) {
+                    const endpoint = window.compareState.type === 'programme'
+                        ? '/autocomplete-data'
+                        : '/mod-autocomplete-data';
+
+                    const response = await fetch(endpoint);
+                    window.compareState.autocompleteData = await response.json();
+                    window.compareState.autocompleteDataType = window.compareState.type;
+                }
+
+                const items = Object.keys(window.compareState.autocompleteData);
+
+                // Filter matching items
+                const queryLower = query.toLowerCase();
+                const matches = items.filter(item =>
+                    item.toLowerCase().includes(queryLower)
+                ).slice(0, 10);
+
+                if (matches.length === 0) {
+                    dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">No matches found</div>';
+                    dropdown.classList.remove('hidden');
+                    return;
+                }
+
+                // Render dropdown
+                dropdown.innerHTML = matches.map(item => {
+                    const code = item.split(' - ')[0].trim();
+                    const escapedItem = item.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    return `<div class="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-0"
+                                 onclick="selectCompareSpec('${code}', '${escapedItem}')">
+                        ${item}
+                    </div>`;
+                }).join('');
+
+                dropdown.classList.remove('hidden');
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+                dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-red-500">Error loading suggestions</div>';
+                dropdown.classList.remove('hidden');
+            }
+        }, 300);
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Handle keyboard navigation
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+        }
+    });
+};
+
+/**
+ * Select a spec for comparison
+ */
+window.selectCompareSpec = function(code, fullText) {
+    window.compareState.selectedCode = code;
+    window.compareState.selectedTitle = fullText;
+
+    document.getElementById('compare-spec-input').value = fullText;
+    document.getElementById('compare-spec-dropdown').classList.add('hidden');
+};
+
+/**
+ * Execute the comparison
+ */
+window.executeComparison = async function() {
+    if (!window.compareState.selectedCode) {
+        window.showNotification?.('Please select a ' + window.compareState.type + ' to compare', 'warning');
+        return;
+    }
+
+    const yearA = document.getElementById('compare-year-a').value;
+    const yearB = document.getElementById('compare-year-b').value;
+
+    if (yearA === yearB) {
+        window.showNotification?.('Please select different years to compare', 'warning');
+        return;
+    }
+
+    window.compareState.yearA = yearA;
+    window.compareState.yearB = yearB;
+
+    const resultsContainer = document.getElementById('compare-results');
+    resultsContainer.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div class="flex flex-col items-center justify-center">
+                <div class="animate-spin h-10 w-10 border-4 border-purple-500 border-t-transparent rounded-full mb-4"></div>
+                <p class="text-gray-600 dark:text-gray-400">Loading specs for comparison...</p>
+            </div>
+        </div>`;
+    resultsContainer.classList.remove('hidden');
+
+    try {
+        // Fetch both specs - programme endpoint requires cohort type
+        let urlA, urlB;
+        if (window.compareState.type === 'programme') {
+            const cohortType = window.compareState.cohortType;
+            urlA = `/prog-data/${window.compareState.selectedCode}/${cohortType}/${yearA}`;
+            urlB = `/prog-data/${window.compareState.selectedCode}/${cohortType}/${yearB}`;
+        } else {
+            urlA = `/mod-data/${window.compareState.selectedCode}/${yearA}`;
+            urlB = `/mod-data/${window.compareState.selectedCode}/${yearB}`;
+        }
+
+        const [responseA, responseB] = await Promise.all([
+            fetch(urlA),
+            fetch(urlB)
+        ]);
+
+        let specA = null;
+        let specB = null;
+        let errorMessages = [];
+
+        if (responseA.ok) {
+            specA = await responseA.json();
+        } else {
+            errorMessages.push(`Not found in ${yearA === '2026' ? '2026/27' : '2025/26'}`);
+        }
+
+        if (responseB.ok) {
+            specB = await responseB.json();
+        } else {
+            errorMessages.push(`Not found in ${yearB === '2026' ? '2026/27' : '2025/26'}`);
+        }
+
+        if (!specA && !specB) {
+            resultsContainer.innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-6 rounded-lg border border-red-200 dark:border-red-800">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                        <div>
+                            <p class="font-medium">Unable to load specs</p>
+                            <p class="text-sm mt-1">The ${window.compareState.type} "${window.compareState.selectedCode}" was not found in either year.</p>
+                        </div>
+                    </div>
+                </div>`;
+            lucide.createIcons();
+            return;
+        }
+
+        window.compareState.specDataA = specA;
+        window.compareState.specDataB = specB;
+
+        // Render comparison
+        renderComparison();
+        lucide.createIcons();
+    } catch (error) {
+        console.error('Comparison error:', error);
+        resultsContainer.innerHTML = `
+            <div class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-6 rounded-lg border border-red-200 dark:border-red-800">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                    <div>
+                        <p class="font-medium">Error loading specs</p>
+                        <p class="text-sm mt-1">${error.message || 'An unexpected error occurred'}</p>
+                    </div>
+                </div>
+            </div>`;
+        lucide.createIcons();
+    }
+};
+
+/**
+ * Convert a value to a comparable string
+ * Handles objects (like module outcomes), arrays, and primitives
+ */
+function toComparableString(val) {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'string') return val.trim();
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+
+    // Handle module outcome objects: {sequence: 1, outcome: "text"}
+    if (typeof val === 'object' && val.outcome) {
+        return val.outcome.trim();
+    }
+
+    // Handle other objects by stringifying relevant content
+    if (typeof val === 'object') {
+        // Try common text fields
+        if (val.text) return val.text.trim();
+        if (val.value) return val.value.trim();
+        if (val.content) return val.content.trim();
+        // Fallback to JSON (but only for simple objects)
+        try {
+            return JSON.stringify(val);
+        } catch (e) {
+            return '[Object]';
+        }
+    }
+
+    return String(val);
+}
+
+/**
+ * Compare two strings and return diff result
+ */
+function diffStrings(strA, strB) {
+    const a = toComparableString(strA);
+    const b = toComparableString(strB);
+
+    if (a === b) return { type: 'unchanged', value: a };
+    if (!a && b) return { type: 'added', value: b };
+    if (a && !b) return { type: 'removed', value: a };
+    return { type: 'changed', oldValue: a, newValue: b };
+}
+
+/**
+ * Compare two arrays and return diff results
+ */
+function diffArrays(arrA, arrB) {
+    const a = arrA || [];
+    const b = arrB || [];
+    const results = [];
+    const maxLen = Math.max(a.length, b.length);
+
+    for (let i = 0; i < maxLen; i++) {
+        const itemA = a[i] || '';
+        const itemB = b[i] || '';
+        results.push(diffStrings(itemA, itemB));
+    }
+
+    return results;
+}
+
+/**
+ * Escape HTML special characters
+ */
+function escapeHtmlForCompare(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Render data quality flags as warning/info boxes
+ */
+function renderQualityFlags(flags) {
+    if (!flags || flags.length === 0) return '';
+
+    const warnings = flags.filter(f => f.type === 'warning');
+    const infos = flags.filter(f => f.type === 'info');
+
+    let html = '';
+
+    if (warnings.length > 0) {
+        html += `
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg mb-4">
+            <h3 class="font-semibold text-yellow-800 dark:text-yellow-200 mb-2 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                Data Quality Warnings
+            </h3>
+            <ul class="list-disc list-inside text-yellow-700 dark:text-yellow-300 text-sm space-y-1">
+                ${warnings.map(w => `<li>${w.message}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+
+    if (infos.length > 0) {
+        html += `
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg mb-4">
+            <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                Data Quality Notes
+            </h3>
+            <ul class="list-disc list-inside text-blue-700 dark:text-blue-300 text-sm space-y-1">
+                ${infos.map(i => `<li>${i.message}</li>`).join('')}
+            </ul>
+        </div>`;
+    }
+
+    return html;
+}
+
+/**
+ * Check if two values have any differences
+ */
+function hasAnyChanges(dataA, dataB, type) {
+    if (type === 'array') {
+        const diffs = diffArrays(dataA, dataB);
+        return diffs.some(d => d.type !== 'unchanged');
+    } else if (type === 'object') {
+        // For objects, compare stringified versions
+        const strA = JSON.stringify(dataA || {});
+        const strB = JSON.stringify(dataB || {});
+        return strA !== strB;
+    } else {
+        const diff = diffStrings(dataA, dataB);
+        return diff.type !== 'unchanged';
+    }
+}
+
+/**
+ * Render diff content for a single field
+ */
+function renderFieldDiff(label, dataA, dataB, type) {
+    let contentA = '';
+    let contentB = '';
+
+    if (type === 'array') {
+        const diffs = diffArrays(dataA, dataB);
+        diffs.forEach(diff => {
+            if (diff.type === 'unchanged') {
+                contentA += `<div class="py-1 diff-unchanged">${escapeHtmlForCompare(diff.value)}</div>`;
+                contentB += `<div class="py-1 diff-unchanged">${escapeHtmlForCompare(diff.value)}</div>`;
+            } else if (diff.type === 'added') {
+                contentA += `<div class="py-1 text-gray-400 dark:text-gray-600 italic">-</div>`;
+                contentB += `<div class="py-1 diff-added">${escapeHtmlForCompare(diff.value)}</div>`;
+            } else if (diff.type === 'removed') {
+                contentA += `<div class="py-1 diff-removed">${escapeHtmlForCompare(diff.value)}</div>`;
+                contentB += `<div class="py-1 text-gray-400 dark:text-gray-600 italic">-</div>`;
+            } else if (diff.type === 'changed') {
+                contentA += `<div class="py-1 diff-changed">${escapeHtmlForCompare(diff.oldValue)}</div>`;
+                contentB += `<div class="py-1 diff-changed">${escapeHtmlForCompare(diff.newValue)}</div>`;
+            }
+        });
+    } else {
+        const diff = diffStrings(dataA, dataB);
+        if (diff.type === 'unchanged') {
+            contentA = `<div class="diff-unchanged">${escapeHtmlForCompare(diff.value)}</div>`;
+            contentB = `<div class="diff-unchanged">${escapeHtmlForCompare(diff.value)}</div>`;
+        } else if (diff.type === 'added') {
+            contentA = `<div class="text-gray-400 dark:text-gray-600 italic">-</div>`;
+            contentB = `<div class="diff-added">${escapeHtmlForCompare(diff.value)}</div>`;
+        } else if (diff.type === 'removed') {
+            contentA = `<div class="diff-removed">${escapeHtmlForCompare(diff.value)}</div>`;
+            contentB = `<div class="text-gray-400 dark:text-gray-600 italic">-</div>`;
+        } else if (diff.type === 'changed') {
+            contentA = `<div class="diff-changed">${escapeHtmlForCompare(diff.oldValue)}</div>`;
+            contentB = `<div class="diff-changed">${escapeHtmlForCompare(diff.newValue)}</div>`;
+        }
+    }
+
+    if (label) {
+        return `
+            <div class="mb-4">
+                <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">${label}</div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-sm text-gray-700 dark:text-gray-300">${contentA || '<span class="text-gray-400 italic">-</span>'}</div>
+                    <div class="text-sm text-gray-700 dark:text-gray-300">${contentB || '<span class="text-gray-400 italic">-</span>'}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="text-sm text-gray-700 dark:text-gray-300">${contentA || '<span class="text-gray-400 italic">-</span>'}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300">${contentB || '<span class="text-gray-400 italic">-</span>'}</div>
+        </div>
+    `;
+}
+
+/**
+ * Toggle compare section visibility
+ */
+window.toggleCompareSection = function(sectionId) {
+    const content = document.getElementById(`compare-${sectionId}-content`);
+    const icon = document.getElementById(`compare-${sectionId}-icon`);
+
+    if (!content) return;
+
+    if (content.classList.contains('hidden')) {
+        // Expand
+        content.classList.remove('hidden');
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(-10px)';
+        requestAnimationFrame(() => {
+            content.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+            content.style.opacity = '1';
+            content.style.transform = 'translateY(0)';
+        });
+        if (icon) icon.style.transform = 'rotate(90deg)';
+    } else {
+        // Collapse
+        content.style.transition = 'opacity 0.2s ease-in, transform 0.2s ease-in';
+        content.style.opacity = '0';
+        content.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+            content.classList.add('hidden');
+            content.style.opacity = '';
+            content.style.transform = '';
+            content.style.transition = '';
+        }, 200);
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+};
+
+/**
+ * Expand all compare sections
+ */
+window.expandAllCompareSections = function() {
+    document.querySelectorAll('[id^="compare-"][id$="-content"]').forEach((content, index) => {
+        setTimeout(() => {
+            content.classList.remove('hidden');
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(-10px)';
+            requestAnimationFrame(() => {
+                content.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            });
+        }, index * 50);
+    });
+    document.querySelectorAll('[id^="compare-"][id$="-icon"]').forEach(icon => {
+        icon.style.transform = 'rotate(90deg)';
+    });
+};
+
+/**
+ * Collapse all compare sections
+ */
+window.collapseAllCompareSections = function() {
+    document.querySelectorAll('[id^="compare-"][id$="-content"]').forEach((content, index) => {
+        setTimeout(() => {
+            content.style.transition = 'opacity 0.2s ease-in, transform 0.2s ease-in';
+            content.style.opacity = '0';
+            content.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                content.classList.add('hidden');
+                content.style.opacity = '';
+                content.style.transform = '';
+                content.style.transition = '';
+            }, 200);
+        }, index * 40);
+    });
+    document.querySelectorAll('[id^="compare-"][id$="-icon"]').forEach(icon => {
+        icon.style.transform = 'rotate(0deg)';
+    });
+};
+
+/**
+ * Render a collapsible compare section
+ */
+function renderCollapsibleCompareSection(sectionId, title, icon, color, contentHtml, hasChanges, startExpanded = false) {
+    const changeIndicator = hasChanges
+        ? '<span class="ml-auto px-2 py-0.5 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded">Changes</span>'
+        : '<span class="ml-auto px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">No changes</span>';
+
+    const hiddenClass = startExpanded ? '' : 'hidden';
+    const iconRotation = startExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
+
+    return `
+        <div class="border-l-4 border-l-${color}-500 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mb-3">
+            <button onclick="toggleCompareSection('${sectionId}')"
+                    class="w-full px-4 py-3 bg-gradient-to-r from-${color}-50 to-transparent dark:from-${color}-900/20 dark:to-transparent hover:from-${color}-100 dark:hover:from-${color}-900/30 flex items-center transition-colors">
+                <i data-lucide="chevron-right" class="w-5 h-5 text-${color}-600 dark:text-${color}-400 transition-transform mr-3" id="compare-${sectionId}-icon" style="transform: ${iconRotation}"></i>
+                <i data-lucide="${icon}" class="w-5 h-5 text-${color}-600 dark:text-${color}-400 mr-2"></i>
+                <span class="font-semibold text-gray-900 dark:text-gray-100">${title}</span>
+                ${changeIndicator}
+            </button>
+            <div id="compare-${sectionId}-content" class="${hiddenClass} p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                ${contentHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render programme-specific comparison sections
+ */
+function renderProgrammeComparison(specA, specB) {
+    let html = '';
+
+    // 1. Programme Details Section
+    const detailsFields = [
+        { label: 'College', a: specA?.college, b: specB?.college },
+        { label: 'School', a: specA?.school, b: specB?.school },
+        { label: 'Department 1', a: specA?.dept1, b: specB?.dept1 },
+        { label: 'Department 2', a: specA?.dept2, b: specB?.dept2 },
+        { label: 'Length', a: specA?.length, b: specB?.length },
+        { label: 'Mode', a: specA?.mode, b: specB?.mode },
+        { label: 'Campus', a: specA?.campus, b: specB?.campus },
+        { label: 'ATAS', a: specA?.atas, b: specB?.atas },
+        { label: 'Regulatory Body', a: specA?.regBody, b: specB?.regBody },
+        { label: 'Subject 1', a: specA?.subject1, b: specB?.subject1 },
+        { label: 'Subject 2', a: specA?.subject2, b: specB?.subject2 },
+        { label: 'Subject 3', a: specA?.subject3, b: specB?.subject3 },
+        { label: 'Accreditation', a: specA?.accreditation, b: specB?.accreditation },
+        { label: 'Partner', a: specA?.partner, b: specB?.partner }
+    ];
+    const detailsHasChanges = detailsFields.some(f => hasAnyChanges(f.a, f.b, 'string'));
+    let detailsContent = detailsFields.map(f => renderFieldDiff(f.label, f.a, f.b, 'string')).join('');
+    html += renderCollapsibleCompareSection('prog-details', 'Programme Details', 'info', 'gray', detailsContent, detailsHasChanges);
+
+    // 2. Programme Aims Section
+    const aimsHasChanges = hasAnyChanges(specA?.aims, specB?.aims, 'array');
+    const aimsContent = renderFieldDiff(null, specA?.aims, specB?.aims, 'array');
+    html += renderCollapsibleCompareSection('prog-aims', 'Programme Aims', 'target', 'blue', aimsContent, aimsHasChanges, aimsHasChanges);
+
+    // 3. Knowledge & Understanding Section
+    let knowledgeContent = '';
+    knowledgeContent += renderFieldDiff('Outcomes', specA?.knowledge?.outcome, specB?.knowledge?.outcome, 'array');
+    knowledgeContent += renderFieldDiff('Learning & Teaching', specA?.knowledge?.learning, specB?.knowledge?.learning, 'array');
+    knowledgeContent += renderFieldDiff('Assessment', specA?.knowledge?.assessment, specB?.knowledge?.assessment, 'array');
+    const knowledgeHasChanges = hasAnyChanges(specA?.knowledge?.outcome, specB?.knowledge?.outcome, 'array') ||
+                                hasAnyChanges(specA?.knowledge?.learning, specB?.knowledge?.learning, 'array') ||
+                                hasAnyChanges(specA?.knowledge?.assessment, specB?.knowledge?.assessment, 'array');
+    html += renderCollapsibleCompareSection('prog-knowledge', 'Knowledge & Understanding', 'book-open', 'blue', knowledgeContent, knowledgeHasChanges, knowledgeHasChanges);
+
+    // 4. Skills & Other Attributes Section
+    let skillsContent = '';
+    skillsContent += renderFieldDiff('Outcomes', specA?.skills?.outcome, specB?.skills?.outcome, 'array');
+    skillsContent += renderFieldDiff('Learning & Teaching', specA?.skills?.learning, specB?.skills?.learning, 'array');
+    skillsContent += renderFieldDiff('Assessment', specA?.skills?.assessment, specB?.skills?.assessment, 'array');
+    const skillsHasChanges = hasAnyChanges(specA?.skills?.outcome, specB?.skills?.outcome, 'array') ||
+                             hasAnyChanges(specA?.skills?.learning, specB?.skills?.learning, 'array') ||
+                             hasAnyChanges(specA?.skills?.assessment, specB?.skills?.assessment, 'array');
+    html += renderCollapsibleCompareSection('prog-skills', 'Skills & Other Attributes', 'award', 'green', skillsContent, skillsHasChanges, skillsHasChanges);
+
+    // 5. Programme Structure Section (Years with modules)
+    let structureContent = '';
+    let structureHasChanges = false;
+    const years = ['year0', 'year1', 'year2', 'year3', 'year4', 'year5'];
+    const yearLabels = ['Foundation Year', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
+
+    // Helper to format rules with modules as HTML tables with diff highlighting
+    const formatRulesWithDiff = (rules, otherRules, isLeftSide) => {
+        if (!rules || !Array.isArray(rules) || rules.length === 0) return '';
+
+        // Get all module codes from the other side for comparison
+        const otherModuleCodes = new Set();
+        if (otherRules && Array.isArray(otherRules)) {
+            otherRules.forEach(rule => {
+                (rule.module || []).forEach(m => otherModuleCodes.add(m.moduleCode));
+            });
+        }
+
+        return rules.map(rule => {
+            let html = '';
+            if (rule.ruleText) {
+                html += `<p class="text-sm italic text-gray-600 dark:text-gray-400 mb-2">${escapeHtmlForCompare(rule.ruleText)}</p>`;
+            }
+            if (rule.module && rule.module.length > 0) {
+                html += `
+                    <div class="overflow-x-auto rounded border border-gray-200 dark:border-gray-700 mb-3">
+                        <table class="w-full text-xs">
+                            <thead class="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                    <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400">Code</th>
+                                    <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400">Title</th>
+                                    <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400">Credits</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                ${rule.module.map(m => {
+                                    const inOther = otherModuleCodes.has(m.moduleCode);
+                                    // Left side: not in other = removed; Right side: not in other = added
+                                    let rowClass = '';
+                                    if (!inOther) {
+                                        rowClass = isLeftSide ? 'diff-removed' : 'diff-added';
+                                    }
+                                    return `<tr class="${rowClass}">
+                                        <td class="px-2 py-1 text-gray-900 dark:text-gray-100">${escapeHtmlForCompare(m.moduleCode)}</td>
+                                        <td class="px-2 py-1 text-gray-700 dark:text-gray-300">${escapeHtmlForCompare(m.moduleTitle)}</td>
+                                        <td class="px-2 py-1 text-gray-600 dark:text-gray-400">${m.moduleCredits}</td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>`;
+            }
+            return html;
+        }).join('');
+    };
+
+    // Helper to check if rules have any modules
+    const rulesHaveModules = (rules) => {
+        if (!rules || !Array.isArray(rules)) return false;
+        return rules.some(rule => rule.module && rule.module.length > 0);
+    };
+
+    // Helper to get rules signature for change detection (includes rule text + module codes)
+    const getRulesSignature = (rules) => {
+        if (!rules || !Array.isArray(rules)) return '';
+        return rules.map(rule => {
+            const ruleText = rule.ruleText || '';
+            const moduleCodes = (rule.module || []).map(m => m.moduleCode).sort().join(',');
+            return `${ruleText}|${moduleCodes}`;
+        }).join('||');
+    };
+
+    years.forEach((year, idx) => {
+        const yearDataA = specA?.years?.[year];
+        const yearDataB = specB?.years?.[year];
+
+        if (yearDataA || yearDataB) {
+            // Format compulsory and optional modules as HTML tables with diff highlighting
+            // Pass both sides to enable highlighting of added/removed modules
+            const compA = formatRulesWithDiff(yearDataA?.rules?.compulsory, yearDataB?.rules?.compulsory, true);
+            const compB = formatRulesWithDiff(yearDataB?.rules?.compulsory, yearDataA?.rules?.compulsory, false);
+            const optA = formatRulesWithDiff(yearDataA?.rules?.optional, yearDataB?.rules?.optional, true);
+            const optB = formatRulesWithDiff(yearDataB?.rules?.optional, yearDataA?.rules?.optional, false);
+
+            const hasCompA = rulesHaveModules(yearDataA?.rules?.compulsory);
+            const hasCompB = rulesHaveModules(yearDataB?.rules?.compulsory);
+            const hasOptA = rulesHaveModules(yearDataA?.rules?.optional);
+            const hasOptB = rulesHaveModules(yearDataB?.rules?.optional);
+
+            if (hasCompA || hasCompB || hasOptA || hasOptB) {
+                structureContent += `<div class="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                    <div class="font-medium text-gray-800 dark:text-gray-200 mb-3">${yearLabels[idx]}</div>`;
+
+                // Compulsory Modules
+                if (hasCompA || hasCompB) {
+                    structureContent += `
+                        <div class="mb-4">
+                            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Compulsory Modules</div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>${compA || '<span class="text-gray-400 italic text-sm">None</span>'}</div>
+                                <div>${compB || '<span class="text-gray-400 italic text-sm">None</span>'}</div>
+                            </div>
+                        </div>`;
+                }
+
+                // Optional Modules
+                if (hasOptA || hasOptB) {
+                    structureContent += `
+                        <div class="mb-2">
+                            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Optional Modules</div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>${optA || '<span class="text-gray-400 italic text-sm">None</span>'}</div>
+                                <div>${optB || '<span class="text-gray-400 italic text-sm">None</span>'}</div>
+                            </div>
+                        </div>`;
+                }
+
+                structureContent += '</div>';
+
+                // Check for changes by comparing rules signatures (includes rule text + module codes)
+                const compSigA = getRulesSignature(yearDataA?.rules?.compulsory);
+                const compSigB = getRulesSignature(yearDataB?.rules?.compulsory);
+                const optSigA = getRulesSignature(yearDataA?.rules?.optional);
+                const optSigB = getRulesSignature(yearDataB?.rules?.optional);
+
+                if (compSigA !== compSigB || optSigA !== optSigB) {
+                    structureHasChanges = true;
+                }
+            }
+        }
+    });
+
+    if (!structureContent) {
+        structureContent = '<p class="text-gray-500 dark:text-gray-400 italic">No programme structure data available</p>';
+    }
+    html += renderCollapsibleCompareSection('prog-structure', 'Programme Structure', 'layers', 'purple', structureContent, structureHasChanges);
+
+    // 6. Benchmark Statement Section
+    const benchmarkHasChanges = hasAnyChanges(specA?.benchmark, specB?.benchmark, 'string');
+    const benchmarkContent = renderFieldDiff(null, specA?.benchmark, specB?.benchmark, 'string');
+    html += renderCollapsibleCompareSection('prog-benchmark', 'Benchmark Statement', 'bookmark', 'amber', benchmarkContent, benchmarkHasChanges);
+
+    return html;
+}
+
+/**
+ * Render module-specific comparison sections
+ */
+function renderModuleComparison(specA, specB) {
+    let html = '';
+
+    // 1. Module Details Section
+    const detailsFields = [
+        { label: 'School', a: specA?.school, b: specB?.school },
+        { label: 'Department', a: specA?.dept, b: specB?.dept },
+        { label: 'Semester', a: specA?.semester, b: specB?.semester },
+        { label: 'Campus', a: specA?.campus, b: specB?.campus },
+        { label: 'Credits', a: specA?.credits, b: specB?.credits },
+        { label: 'Level', a: specA?.level, b: specB?.level },
+        { label: 'Module Lead', a: specA?.lead, b: specB?.lead }
+    ];
+    const detailsHasChanges = detailsFields.some(f => hasAnyChanges(f.a, f.b, 'string'));
+    let detailsContent = detailsFields.map(f => renderFieldDiff(f.label, f.a, f.b, 'string')).join('');
+    html += renderCollapsibleCompareSection('mod-details', 'Module Details', 'info', 'gray', detailsContent, detailsHasChanges);
+
+    // 2. Prerequisites & Requirements Section
+    const prereqFields = [
+        { label: 'Prerequisites', a: specA?.prereqs?.join(', '), b: specB?.prereqs?.join(', ') },
+        { label: 'Co-requisites', a: specA?.coreqs?.join(', '), b: specB?.coreqs?.join(', ') },
+        { label: 'Restrictions', a: specA?.restrictions, b: specB?.restrictions },
+        { label: 'Exam Period', a: specA?.examPeriod?.join(', '), b: specB?.examPeriod?.join(', ') },
+        { label: 'Class Test', a: specA?.ctExam ? 'Yes' : 'No', b: specB?.ctExam ? 'Yes' : 'No' }
+    ];
+    const prereqHasChanges = prereqFields.some(f => hasAnyChanges(f.a, f.b, 'string'));
+    let prereqContent = prereqFields.map(f => renderFieldDiff(f.label, f.a, f.b, 'string')).join('');
+    html += renderCollapsibleCompareSection('mod-prereq', 'Prerequisites & Requirements', 'alert-circle', 'orange', prereqContent, prereqHasChanges);
+
+    // 3. Contact Hours Section
+    const contactFields = [
+        { label: 'Lectures', a: specA?.lecture, b: specB?.lecture },
+        { label: 'Seminars', a: specA?.seminar, b: specB?.seminar },
+        { label: 'Tutorials', a: specA?.tutorial, b: specB?.tutorial },
+        { label: 'Project Supervision', a: specA?.project, b: specB?.project },
+        { label: 'Demonstrations', a: specA?.demo, b: specB?.demo },
+        { label: 'Practical Classes', a: specA?.practical, b: specB?.practical },
+        { label: 'Workshops', a: specA?.workshop, b: specB?.workshop },
+        { label: 'Fieldwork', a: specA?.fieldwork, b: specB?.fieldwork },
+        { label: 'External Visits', a: specA?.visits, b: specB?.visits },
+        { label: 'Work-based Learning', a: specA?.work, b: specB?.work },
+        { label: 'Placement', a: specA?.placement, b: specB?.placement },
+        { label: 'Study Abroad', a: specA?.abroad, b: specB?.abroad },
+        { label: 'Independent Study', a: specA?.independent, b: specB?.independent }
+    ];
+    const contactHasChanges = contactFields.some(f => hasAnyChanges(f.a, f.b, 'string'));
+    let contactContent = contactFields.map(f => renderFieldDiff(f.label, f.a, f.b, 'string')).join('');
+    html += renderCollapsibleCompareSection('mod-contact', 'Contact Hours', 'clock', 'green', contactContent, contactHasChanges);
+
+    // 4. Description Section
+    const descHasChanges = hasAnyChanges(specA?.description, specB?.description, 'array');
+    const descContent = renderFieldDiff(null, specA?.description, specB?.description, 'array');
+    html += renderCollapsibleCompareSection('mod-desc', 'Module Description', 'file-text', 'green', descContent, descHasChanges, descHasChanges);
+
+    // 5. Learning Outcomes Section
+    const outcomesHasChanges = hasAnyChanges(specA?.outcomes, specB?.outcomes, 'array');
+    const outcomesContent = renderFieldDiff(null, specA?.outcomes, specB?.outcomes, 'array');
+    html += renderCollapsibleCompareSection('mod-outcomes', 'Learning Outcomes', 'award', 'blue', outcomesContent, outcomesHasChanges, outcomesHasChanges);
+
+    // 6. Assessment Section
+    let assessContent = '';
+    assessContent += renderFieldDiff('Summative Assessment', specA?.summative, specB?.summative, 'array');
+    assessContent += renderFieldDiff('Formative Assessment', specA?.formative, specB?.formative, 'array');
+    assessContent += renderFieldDiff('Reassessment', specA?.reassessment, specB?.reassessment, 'array');
+    const assessHasChanges = hasAnyChanges(specA?.summative, specB?.summative, 'array') ||
+                             hasAnyChanges(specA?.formative, specB?.formative, 'array') ||
+                             hasAnyChanges(specA?.reassessment, specB?.reassessment, 'array');
+    html += renderCollapsibleCompareSection('mod-assess', 'Assessment Methods', 'check-square', 'purple', assessContent, assessHasChanges, assessHasChanges);
+
+    // 7. Attached Programmes Section
+    const compProgsA = specA?.attachedProgs?.comp?.join(', ') || '';
+    const compProgsB = specB?.attachedProgs?.comp?.join(', ') || '';
+    const optProgsA = specA?.attachedProgs?.optional?.join(', ') || '';
+    const optProgsB = specB?.attachedProgs?.optional?.join(', ') || '';
+
+    let attachedContent = '';
+    attachedContent += renderFieldDiff('Compulsory For', compProgsA, compProgsB, 'string');
+    attachedContent += renderFieldDiff('Optional For', optProgsA, optProgsB, 'string');
+
+    const attachedHasChanges = hasAnyChanges(compProgsA, compProgsB, 'string') ||
+                               hasAnyChanges(optProgsA, optProgsB, 'string');
+    html += renderCollapsibleCompareSection('mod-attached', 'Attached Programmes', 'link', 'indigo', attachedContent, attachedHasChanges);
+
+    return html;
+}
+
+/**
+ * Format contact hours object as readable string
+ */
+function formatContactHours(hours) {
+    if (!hours || typeof hours !== 'object') return '';
+    const parts = [];
+    if (hours.lecture) parts.push(`Lectures: ${hours.lecture}`);
+    if (hours.seminar) parts.push(`Seminars: ${hours.seminar}`);
+    if (hours.tutorial) parts.push(`Tutorials: ${hours.tutorial}`);
+    if (hours.lab) parts.push(`Labs: ${hours.lab}`);
+    if (hours.workshop) parts.push(`Workshops: ${hours.workshop}`);
+    if (hours.project) parts.push(`Project: ${hours.project}`);
+    if (hours.placement) parts.push(`Placement: ${hours.placement}`);
+    if (hours.independent) parts.push(`Independent Study: ${hours.independent}`);
+    if (hours.total) parts.push(`Total: ${hours.total}`);
+    return parts.join(', ');
+}
+
+/**
+ * Render the comparison results
+ */
+function renderComparison() {
+    const container = document.getElementById('compare-results');
+    const specA = window.compareState.specDataA;
+    const specB = window.compareState.specDataB;
+
+    const yearLabelA = window.compareState.yearA === '2026' ? '2026/27' : '2025/26';
+    const yearLabelB = window.compareState.yearB === '2026' ? '2026/27' : '2025/26';
+
+    const title = specA?.title || specB?.title || 'Unknown';
+    const code = specA?.code || specB?.code || window.compareState.selectedCode;
+
+    let html = `
+        <!-- Header Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
+            <div class="p-6 bg-gradient-to-r from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-800">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            ${escapeHtmlForCompare(code)} - ${escapeHtmlForCompare(title)}
+                        </h3>
+                        <div class="flex flex-wrap gap-4 text-sm">
+                            <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                <span class="inline-block w-3 h-3 rounded bg-green-500"></span> Added in ${yearLabelB}
+                            </span>
+                            <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                <span class="inline-block w-3 h-3 rounded bg-red-500"></span> Removed from ${yearLabelA}
+                            </span>
+                            <span class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                                <span class="inline-block w-3 h-3 rounded bg-yellow-500"></span> Changed
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="expandAllCompareSections()" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+                            <i data-lucide="chevrons-down" class="w-4 h-4"></i>
+                            Expand All
+                        </button>
+                        <button onclick="collapseAllCompareSections()" class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+                            <i data-lucide="chevrons-up" class="w-4 h-4"></i>
+                            Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
+    `;
+
+    // Handle cases where one spec is missing
+    if (!specA) {
+        html += `
+            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-800">
+                <div class="flex items-center gap-3 text-yellow-700 dark:text-yellow-400">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>This ${window.compareState.type} does not exist in ${yearLabelA}. Showing ${yearLabelB} content only.</p>
+                </div>
+            </div>
+        `;
+    } else if (!specB) {
+        html += `
+            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-800">
+                <div class="flex items-center gap-3 text-yellow-700 dark:text-yellow-400">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <p>This ${window.compareState.type} does not exist in ${yearLabelB}. Showing ${yearLabelA} content only.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Column headers - sticky reference
+    html += `
+            <div class="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                <div class="p-3 text-center">
+                    <span class="font-semibold text-gray-900 dark:text-white text-sm">${yearLabelA} (Base)</span>
+                </div>
+                <div class="p-3 text-center">
+                    <span class="font-semibold text-gray-900 dark:text-white text-sm">${yearLabelB} (Compare)</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Compare sections based on type
+    if (window.compareState.type === 'programme') {
+        html += renderProgrammeComparison(specA, specB);
+    } else {
+        html += renderModuleComparison(specA, specB);
+    }
+
+    container.innerHTML = html;
+}
+
+// Initialize compare autocomplete when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Small delay to ensure all elements are rendered
+    setTimeout(() => {
+        window.initCompareAutocomplete();
+    }, 100);
+});
