@@ -12127,8 +12127,14 @@ function renderComparison() {
     const yearLabelA = window.compareState.yearA === '2026' ? '2026/27' : '2025/26';
     const yearLabelB = window.compareState.yearB === '2026' ? '2026/27' : '2025/26';
 
-    const title = specA?.title || specB?.title || 'Unknown';
-    const code = specA?.code || specB?.code || window.compareState.selectedCode;
+    // Handle different property names for programmes (progTitle/progCode) vs modules (title/code)
+    const isProgramme = window.compareState.type === 'programme';
+    const title = isProgramme
+        ? (specA?.progTitle || specB?.progTitle || 'Unknown')
+        : (specA?.title || specB?.title || 'Unknown');
+    const code = isProgramme
+        ? (specA?.progCode || specB?.progCode || window.compareState.selectedCode)
+        : (specA?.code || specB?.code || window.compareState.selectedCode);
 
     let html = `
         <!-- Header Card -->
