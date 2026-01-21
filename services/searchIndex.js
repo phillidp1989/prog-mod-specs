@@ -23,8 +23,8 @@ function getSchoolToCollegeMapping() {
 
 class SearchIndexManager {
   constructor() {
-    this.moduleIndexes = {};  // { '2024': Document, '2025': Document, '2026': Document }
-    this.programmeIndexes = {}; // { '2024': Document, '2025': Document, '2026': Document }
+    this.moduleIndexes = {};  // { '2025': Document, '2026': Document, '2027': Document }
+    this.programmeIndexes = {}; // { '2025': Document, '2026': Document, '2027': Document }
     this.indexBuilding = {}; // Track ongoing builds to prevent duplicates
   }
 
@@ -242,13 +242,13 @@ class SearchIndexManager {
    * Search modules with advanced query syntax and filters
    * @param {string} query - Raw query string (supports "phrases", AND, OR, -exclude)
    * @param {Object} options - Search options
-   * @param {string} options.year - Academic year (2024, 2025, 2026)
+   * @param {string} options.year - Academic year (2025, 2026, 2027)
    * @param {number} options.limit - Max results per page
    * @param {number} options.offset - Pagination offset
    * @param {Object} options.filters - Filter criteria
    */
   async searchModules(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
+    const { year = '2027', limit = 20, offset = 0, filters = {} } = options;
 
     const index = await this.getModuleIndex(year);
     const filePath = path.join(__dirname, `../controllers/module${year}.json`);
@@ -374,13 +374,13 @@ class SearchIndexManager {
    * Search programmes with advanced query syntax and filters
    * @param {string} query - Raw query string (supports "phrases", AND, OR, -exclude)
    * @param {Object} options - Search options
-   * @param {string} options.year - Academic year (2024, 2025, 2026)
+   * @param {string} options.year - Academic year (2025, 2026, 2027)
    * @param {number} options.limit - Max results per page
    * @param {number} options.offset - Pagination offset
    * @param {Object} options.filters - Filter criteria
    */
   async searchProgrammes(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
+    const { year = '2027', limit = 20, offset = 0, filters = {} } = options;
 
     const index = await this.getProgrammeIndex(year);
     const filePath = path.join(__dirname, `../controllers/prog${year}.json`);
@@ -498,7 +498,7 @@ class SearchIndexManager {
    * @param {Object} options - Search options including filters and type filter
    */
   async searchAll(query, options = {}) {
-    const { year = '2026', limit = 20, offset = 0, filters = {} } = options;
+    const { year = '2027', limit = 20, offset = 0, filters = {} } = options;
 
     // Check if type filter limits to one type
     const typeFilter = filters.types || [];
@@ -757,7 +757,7 @@ class SearchIndexManager {
    * Pre-warm indexes for all years (call on server startup)
    */
   async prewarmIndexes() {
-    const years = ['2024', '2025', '2026'];
+    const years = ['2025', '2026', '2027'];
     console.log('Pre-warming search indexes...');
 
     for (const year of years) {

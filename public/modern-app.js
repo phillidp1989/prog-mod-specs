@@ -977,7 +977,7 @@ window.generateProgrammePreview = function(data, cohort, year) {
                             <h5 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">Compulsory Modules</h5>
                             ${yearData.rules.compulsory.map(rule => `
                                 ${rule.ruleText ? `<p class="text-sm text-gray-700 dark:text-gray-300 mb-2 italic">${rule.ruleText}</p>` : ''}
-                                ${rule.module && rule.module.length > 0 ? `
+                                ${rule.module && rule.module.filter(m => m && m.moduleCode).length > 0 ? `
                                     <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
                                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead class="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700">
@@ -1006,7 +1006,7 @@ window.generateProgrammePreview = function(data, cohort, year) {
                             <h5 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">Optional Modules</h5>
                             ${yearData.rules.optional.map(rule => `
                                 ${rule.ruleText ? `<p class="text-sm text-gray-700 dark:text-gray-300 mb-2 italic">${rule.ruleText}</p>` : ''}
-                                ${rule.module && rule.module.length > 0 ? `
+                                ${rule.module && rule.module.filter(m => m && m.moduleCode).length > 0 ? `
                                     <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 mb-4">
                                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead class="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700">
@@ -6749,8 +6749,8 @@ window.catalogueState = {
     fuseInstance: null,
     expandedCardId: null, // Track which card is currently expanded
     selectedCohortType: 'cohort', // 'cohort' or 'term' for programme specs
-    selectedProgrammeYear: '2025', // Academic year for programme specs
-    selectedModuleYear: '2025', // Academic year for module specs
+    selectedProgrammeYear: '2026', // Academic year for programme specs
+    selectedModuleYear: '2026', // Academic year for module specs
     viewMode: 'grid', // 'grid' or 'list' - controls catalogue display mode
 
     // Bulk generation properties
@@ -9459,7 +9459,7 @@ function switchToTabForTour(tabName) {
 
 /**
  * Cached module data for tour demonstration
- * Real module: 00013 from 2026 data
+ * Real module: 00013 from 2027 data
  */
 const TOUR_DEMO_MODULE = {
     code: "00013",
@@ -9468,12 +9468,12 @@ const TOUR_DEMO_MODULE = {
     level: "LM",
     semester: "Full Term",
     lead: "Dr Jean Assender",
-    year: "2026"
+    year: "2027"
 };
 
 /**
  * Cached programme data for tour demonstration
- * Real programme: 3041 Economics BSc from 2026 term data
+ * Real programme: 3041 Economics BSc from 2027 term data
  */
 const TOUR_DEMO_PROGRAMME = {
     progCode: "3041",
@@ -9644,8 +9644,8 @@ async function expandFirstProgrammeCard() {
     console.log('Expanding tour demo card:', cardId);
 
     // Manually render the expanded content using cached data
-    // Using '2026' and 'term' to match the cached programme data
-    const expandedHTML = window.generateProgrammePreview(prog, '2026', 'term');
+    // Using '2027' and 'term' to match the cached programme data
+    const expandedHTML = window.generateProgrammePreview(prog, '2027', 'term');
 
     // Find or create expanded content container
     let contentDiv = demoCard.querySelector('.catalogue-card-expanded-content');
@@ -10219,7 +10219,7 @@ window.startFeatureTour = function() {
     // Deep search state
     const deepSearchState = {
         query: '',
-        year: '2026',
+        year: '2027',
         specType: 'cohort',
         results: [],
         total: { programmes: 0, modules: 0, combined: 0 },
@@ -11250,8 +11250,8 @@ window.compareState = {
     cohortType: 'cohort', // 'cohort' or 'term' (for programmes only)
     selectedCode: null,
     selectedTitle: '',
-    yearA: '2026',
-    yearB: '2025',
+    yearA: '2025',
+    yearB: '2026',
     specDataA: null,
     specDataB: null,
     isLoading: false,
@@ -11470,13 +11470,13 @@ window.executeComparison = async function() {
         if (responseA.ok) {
             specA = await responseA.json();
         } else {
-            errorMessages.push(`Not found in ${yearA === '2026' ? '2026/27' : '2025/26'}`);
+            errorMessages.push(`Not found in ${yearA}/${String(parseInt(yearA) + 1).slice(-2)}`);
         }
 
         if (responseB.ok) {
             specB = await responseB.json();
         } else {
-            errorMessages.push(`Not found in ${yearB === '2026' ? '2026/27' : '2025/26'}`);
+            errorMessages.push(`Not found in ${yearB}/${String(parseInt(yearB) + 1).slice(-2)}`);
         }
 
         if (!specA && !specB) {
@@ -11887,7 +11887,7 @@ function renderProgrammeComparison(specA, specB) {
             if (rule.ruleText) {
                 html += `<p class="text-sm italic text-gray-600 dark:text-gray-400 mb-2">${escapeHtmlForCompare(rule.ruleText)}</p>`;
             }
-            if (rule.module && rule.module.length > 0) {
+            if (rule.module && rule.module.filter(m => m && m.moduleCode).length > 0) {
                 html += `
                     <div class="overflow-x-auto rounded border border-gray-200 dark:border-gray-700 mb-3">
                         <table class="w-full text-xs">
@@ -11899,7 +11899,7 @@ function renderProgrammeComparison(specA, specB) {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                ${rule.module.map(m => {
+                                ${rule.module.filter(m => m && m.moduleCode).map(m => {
                                     const inOther = otherModuleCodes.has(m.moduleCode);
                                     // Left side: not in other = removed; Right side: not in other = added
                                     let rowClass = '';
@@ -11920,10 +11920,10 @@ function renderProgrammeComparison(specA, specB) {
         }).join('');
     };
 
-    // Helper to check if rules have any modules
+    // Helper to check if rules have any modules (with actual data, not empty objects)
     const rulesHaveModules = (rules) => {
         if (!rules || !Array.isArray(rules)) return false;
-        return rules.some(rule => rule.module && rule.module.length > 0);
+        return rules.some(rule => rule.module && rule.module.filter(m => m && m.moduleCode).length > 0);
     };
 
     // Helper to get rules signature for change detection (includes rule text + module codes)
@@ -12124,8 +12124,8 @@ function renderComparison() {
     const specA = window.compareState.specDataA;
     const specB = window.compareState.specDataB;
 
-    const yearLabelA = window.compareState.yearA === '2026' ? '2026/27' : '2025/26';
-    const yearLabelB = window.compareState.yearB === '2026' ? '2026/27' : '2025/26';
+    const yearLabelA = `${window.compareState.yearA}/${String(parseInt(window.compareState.yearA) + 1).slice(-2)}`;
+    const yearLabelB = `${window.compareState.yearB}/${String(parseInt(window.compareState.yearB) + 1).slice(-2)}`;
 
     // Handle different property names for programmes (progTitle/progCode) vs modules (title/code)
     const isProgramme = window.compareState.type === 'programme';

@@ -36,7 +36,7 @@ const CONSTANTS = {
     ],
 
     // Academic years
-    ACADEMIC_YEARS: ['2024', '2025', '2026'],
+    ACADEMIC_YEARS: ['2025', '2026', '2027'],
 
     // Spec types
     SPEC_TYPES: {

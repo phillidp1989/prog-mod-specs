@@ -18,7 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /**
  * Get programme data for a specific year and cohort type
  * Uses lazy-loading cache to avoid loading all files on startup
- * @param {string} year - Year (2024, 2025, 2026)
+ * @param {string} year - Year (2025, 2026, 2027)
  * @param {string} cohortType - 'cohort' or 'term'
  * @returns {Object} - Programme data
  */
@@ -33,7 +33,7 @@ function getDataForYear(year, cohortType) {
 
 /**
  * Get programme data for a specific year (cohort-based, not term)
- * @param {string} year - Year (2024, 2025, 2026)
+ * @param {string} year - Year (2025, 2026, 2027)
  * @returns {Object} - Programme data
  */
 function getProgrammeDataForYear(year) {
@@ -620,27 +620,27 @@ const programmeDegreeTypes = async (req, res, next) => {
     // Get optional level filter from query parameters ('ug', 'pg', or 'all')
     const levelFilter = req.query.level || 'all';
 
-    // Get year parameter (default to 2026, or 'all' for all years)
-    const year = req.query.year || '2026';
+    // Get year parameter (default to 2027, or 'all' for all years)
+    const year = req.query.year || '2027';
 
     let allData = [];
 
     if (year === 'all') {
       // Load all years (backward compatibility, but slower)
-      const prog2024 = getDataForYear('2024', 'cohort');
       const prog2025 = getDataForYear('2025', 'cohort');
       const prog2026 = getDataForYear('2026', 'cohort');
-      const progterm2024 = getDataForYear('2024', 'term');
+      const prog2027 = getDataForYear('2027', 'cohort');
       const progterm2025 = getDataForYear('2025', 'term');
       const progterm2026 = getDataForYear('2026', 'term');
+      const progterm2027 = getDataForYear('2027', 'term');
 
       allData = [
-        ...prog2024.data,
         ...prog2025.data,
         ...prog2026.data,
-        ...progterm2024.data,
+        ...prog2027.data,
         ...progterm2025.data,
-        ...progterm2026.data
+        ...progterm2026.data,
+        ...progterm2027.data
       ];
     } else {
       // Load only requested year (much faster)

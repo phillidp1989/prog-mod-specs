@@ -26,7 +26,7 @@ function getSchoolToCollegeMapping() {
 /**
  * Get module data for a specific year
  * Uses lazy-loading cache to avoid loading all files on startup
- * @param {string} year - Year (2024, 2025, 2026)
+ * @param {string} year - Year (2025, 2026, 2027)
  * @returns {Object} - Module data
  */
 function getModuleDataForYear(year) {
@@ -282,8 +282,8 @@ const moduleAutocompleteData = async (req, res, next) => {
 // Get module level distribution for charts
 const moduleLevelDistribution = async (req, res, next) => {
   try {
-    // Use 2026 data as the most recent (loaded via cache)
-    const moduleDataset = getModuleDataForYear('2026');
+    // Use 2027 data as the most recent (loaded via cache)
+    const moduleDataset = getModuleDataForYear('2027');
     const data = moduleDataset.data;
 
     // Count modules by level
@@ -305,21 +305,21 @@ const moduleLevelDistribution = async (req, res, next) => {
 // Get filter options for modules
 const moduleFilterOptions = async (req, res, next) => {
   try {
-    // Get year parameter (default to 2026, or 'all' for all years)
-    const year = req.query.year || '2026';
+    // Get year parameter (default to 2027, or 'all' for all years)
+    const year = req.query.year || '2027';
 
     let allData = [];
 
     if (year === 'all') {
       // Load all years (backward compatibility, but slower)
-      const module2024 = getModuleDataForYear('2024');
       const module2025 = getModuleDataForYear('2025');
       const module2026 = getModuleDataForYear('2026');
+      const module2027 = getModuleDataForYear('2027');
 
       allData = [
-        ...module2024.data,
         ...module2025.data,
-        ...module2026.data
+        ...module2026.data,
+        ...module2027.data
       ];
     } else {
       // Load only requested year (much faster)
@@ -403,14 +403,14 @@ const schoolActivity = async (req, res, next) => {
       : {};
 
     // Combine module data from all years
-    const module2024 = getModuleDataForYear('2024');
     const module2025 = getModuleDataForYear('2025');
     const module2026 = getModuleDataForYear('2026');
+    const module2027 = getModuleDataForYear('2027');
 
     let allData = [
-      ...module2024.data,
       ...module2025.data,
-      ...module2026.data
+      ...module2026.data,
+      ...module2027.data
     ];
 
     // Filter by selected colleges if specified (using school-to-college mapping)
@@ -454,8 +454,8 @@ const moduleCreditsDistribution = async (req, res, next) => {
   try {
     const { level, college } = req.query;
 
-    // Use 2026 data as the most recent (loaded via cache)
-    const moduleDataset = getModuleDataForYear('2026');
+    // Use 2027 data as the most recent (loaded via cache)
+    const moduleDataset = getModuleDataForYear('2027');
     let data = moduleDataset.data;
 
     // Get school-to-college mapping for college filtering

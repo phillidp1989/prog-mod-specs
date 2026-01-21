@@ -59,7 +59,7 @@ function parseFilters(query) {
 
 /**
  * Deep search across all programmes and modules
- * GET /search/all?q=query&year=2026&limit=20&offset=0
+ * GET /search/all?q=query&year=2027&limit=20&offset=0
  *
  * Advanced query syntax:
  * - Exact phrase: "machine learning"
@@ -78,7 +78,7 @@ function parseFilters(query) {
  */
 const deepSearchAll = async (req, res) => {
   try {
-    const { q, year = '2026', limit = '20', offset = '0' } = req.query;
+    const { q, year = '2027', limit = '20', offset = '0' } = req.query;
 
     // Validate query parameter
     if (!q || q.trim().length < 3) {
@@ -89,7 +89,7 @@ const deepSearchAll = async (req, res) => {
     }
 
     // Validate year
-    const validYears = ['2024', '2025', '2026'];
+    const validYears = ['2025', '2026', '2027'];
     if (!validYears.includes(year)) {
       return res.status(400).json({
         success: false,
@@ -134,12 +134,12 @@ const deepSearchAll = async (req, res) => {
 
 /**
  * Deep search modules only
- * GET /search/modules?q=query&year=2026&limit=20&offset=0
+ * GET /search/modules?q=query&year=2027&limit=20&offset=0
  * Supports same filter parameters as /search/all
  */
 const deepSearchModules = async (req, res) => {
   try {
-    const { q, year = '2026', limit = '20', offset = '0' } = req.query;
+    const { q, year = '2027', limit = '20', offset = '0' } = req.query;
 
     // Validate query parameter
     if (!q || q.trim().length < 3) {
@@ -150,7 +150,7 @@ const deepSearchModules = async (req, res) => {
     }
 
     // Validate year
-    const validYears = ['2024', '2025', '2026'];
+    const validYears = ['2025', '2026', '2027'];
     if (!validYears.includes(year)) {
       return res.status(400).json({
         success: false,
@@ -195,12 +195,12 @@ const deepSearchModules = async (req, res) => {
 
 /**
  * Deep search programmes only
- * GET /search/programmes?q=query&year=2026&limit=20&offset=0
+ * GET /search/programmes?q=query&year=2027&limit=20&offset=0
  * Supports same filter parameters as /search/all
  */
 const deepSearchProgrammes = async (req, res) => {
   try {
-    const { q, year = '2026', limit = '20', offset = '0' } = req.query;
+    const { q, year = '2027', limit = '20', offset = '0' } = req.query;
 
     // Validate query parameter
     if (!q || q.trim().length < 3) {
@@ -211,7 +211,7 @@ const deepSearchProgrammes = async (req, res) => {
     }
 
     // Validate year
-    const validYears = ['2024', '2025', '2026'];
+    const validYears = ['2025', '2026', '2027'];
     if (!validYears.includes(year)) {
       return res.status(400).json({
         success: false,
