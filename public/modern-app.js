@@ -350,10 +350,19 @@ function highlightFuzzyMatches(text, matchIndices) {
     let result = '';
     let lastIndex = 0;
 
-    // Sort and merge overlapping indices
-    const sortedIndices = matchIndices.sort((a, b) => a[0] - b[0]);
-
+    // Sort and merge overlapping/adjacent indices so the same text is never emitted twice
+    const sortedIndices = [...matchIndices].sort((a, b) => a[0] - b[0]);
+    const mergedIndices = [];
     sortedIndices.forEach(([start, end]) => {
+        const last = mergedIndices[mergedIndices.length - 1];
+        if (last && start <= last[1] + 1) {
+            last[1] = Math.max(last[1], end);
+        } else {
+            mergedIndices.push([start, end]);
+        }
+    });
+
+    mergedIndices.forEach(([start, end]) => {
         // Add non-matched text before this match
         if (start > lastIndex) {
             result += escapeHtml(text.substring(lastIndex, start));
