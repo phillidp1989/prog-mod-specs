@@ -82,8 +82,10 @@ function normalizePunctuation(str) {
  *
  * Patterns handled:
  * 1. ? at start of line/after newline -> - (list item indicator)
- * 2. ?s, ?t, ?ll, ?ve, ?re, ?d patterns -> apostrophe contractions
- * 3. ? surrounded by letters -> ' (mid-word apostrophe)
+ * 2. " ? " (space-question-space) -> " - " (mangled en/em dash)
+ * 3. ?s, ?t, ?ll, ?ve, ?re, ?d patterns -> apostrophe contractions
+ * 4. ? between two digits -> - (mangled dash in a numeric range, e.g. 1880?1960)
+ * 5. ? surrounded by letters -> ' (mid-word apostrophe)
  *
  * @param {string} str - Input string
  * @returns {string} - Fixed string
@@ -99,7 +101,12 @@ function fixQuestionMarkPatterns(str) {
   result = result.replace(/^(\?)\s/gm, '- ');
   result = result.replace(/\n(\?)\s/g, '\n- ');
 
-  // Pattern 2: Common contractions with ?
+  // Pattern 2: " ? " (space-question-space) -> " - " (mangled en/em dash)
+  // A genuine question mark attaches to the preceding word, so a space-flanked
+  // ? is near-certainly a dash that was corrupted during data export.
+  result = result.replace(/ \? /g, ' - ');
+
+  // Pattern 3: Common contractions with ?
   // ?s -> 's (e.g., student?s -> student's, it?s -> it's)
   result = result.replace(/(\w)\?s\b/gi, "$1's");
   // ?t -> 't (e.g., don?t -> don't, can?t -> can't)
@@ -113,7 +120,12 @@ function fixQuestionMarkPatterns(str) {
   // ?d -> 'd (e.g., we?d -> we'd)
   result = result.replace(/(\w)\?d\b/gi, "$1'd");
 
-  // Pattern 3: ? between letters (mid-word apostrophe)
+  // Pattern 4: ? between two digits -> hyphen (mangled dash in a numeric range)
+  // e.g., 1880?1960 -> 1880-1960. Must run before the mid-word apostrophe rule,
+  // since \w also matches digits.
+  result = result.replace(/(\d)\?(\d)/g, '$1-$2');
+
+  // Pattern 5: ? between letters (mid-word apostrophe)
   // e.g., o?clock -> o'clock
   result = result.replace(/(\w)\?(\w)/g, "$1'$2");
 
