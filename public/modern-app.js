@@ -219,11 +219,59 @@ function setupAutocomplete(inputId, data, fuseInstance) {
             const item = result.item.value;
             const matches = result.matches && result.matches.length > 0 ? result.matches[0].indices : [];
 
+            // Module strings have their own delimited format, e.g.
+            // "41822 - Introduction to Programming (Edgbaston) - Semester 1 [Computer Science] {College ...} |20| <LC>"
+            // Parse and render them with the same two-line/badge layout as programmes.
+            const modMatch = inputId === 'mod-search'
+                ? item.match(/^(\S+)\s+-\s+(.+?)(?:\s+\((.+?)\))?\s+-\s+(.+?)\s+\[(.*?)\]\s+\{(.*?)\}\s+\|(.*?)\|\s+<(.*?)>$/)
+                : null;
+
             // Parse the programme string: "CODE - Title Mode (Campus) [School] {College}"
-            const parseMatch = item.match(/^([A-Z0-9]+)\s+-\s+(.+?)\s+([A-Z]{2})\s+\((.+?)\)(?:\s+\[(.+?)\])?(?:\s+\{(.+?)\})?$/);
+            const parseMatch = !modMatch
+                ? item.match(/^([A-Z0-9]+)\s+-\s+(.+?)\s+([A-Z]{2})\s+\((.+?)\)(?:\s+\[(.+?)\])?(?:\s+\{(.+?)\})?$/)
+                : null;
 
             let displayHTML;
-            if (parseMatch) {
+            if (modMatch) {
+                const [, code, title, campus, semester, school, college, credits, level] = modMatch;
+
+                // Get college colors and abbreviation (shared with programme dropdown)
+                const collegeColors = college ? window.getCollegeColor(college) : null;
+                const collegeAbbr = college ? window.abbreviateCollege(college) : null;
+
+                // Line 1: code - title (campus) - semester. This is a prefix of the
+                // raw item, so the fuzzy-match indices map directly.
+                const mainText = `${code} - ${title}${campus ? ` (${campus})` : ''} - ${semester}`;
+                const mainMatches = result.matches && result.matches.length > 0 ?
+                    result.matches[0].indices.filter(([start]) => start < mainText.length) : [];
+                const highlightedMain = highlightFuzzyMatches(mainText, mainMatches);
+
+                // Line 2: school text, college pill, then labelled credits/level badges
+                let metadataHTML = '<div class="flex items-center flex-wrap gap-2 mt-1">';
+                if (school) {
+                    metadataHTML += `<span class="text-xs text-gray-600 dark:text-gray-400">${school}</span>`;
+                }
+                if (school && college) {
+                    metadataHTML += '<span class="text-xs text-gray-400 dark:text-gray-500">•</span>';
+                }
+                if (college && collegeColors && collegeAbbr) {
+                    metadataHTML += `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${collegeColors.bg} ${collegeColors.text} ${collegeColors.darkBg} ${collegeColors.darkText}">${collegeAbbr}</span>`;
+                }
+                if (credits) {
+                    metadataHTML += `<span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">${credits} credits</span>`;
+                }
+                if (level) {
+                    metadataHTML += `<span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">Level ${level}</span>`;
+                }
+                metadataHTML += '</div>';
+
+                displayHTML = `
+                    <div class="leading-relaxed">
+                        <div>${highlightedMain}</div>
+                        ${metadataHTML}
+                    </div>
+                `;
+            } else if (parseMatch) {
                 const [, code, title, mode, campus, school, college] = parseMatch;
 
                 // Get college colors and abbreviation
@@ -396,6 +444,17 @@ function selectAutocomplete(inputId, value) {
     // Trigger change event for other listeners
     input.dispatchEvent(new Event('change', { bubbles: true }));
 }
+
+// Populate a search input from an example chip, focus it, and open the
+// autocomplete dropdown. No-op while the input is still disabled (data loading).
+window.searchExample = function(inputId, text) {
+    const input = document.getElementById(inputId);
+    if (!input || input.disabled) return;
+    input.value = text;
+    input.focus();
+    // Dispatch 'input' so the Fuse autocomplete listener runs and opens the dropdown.
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+};
 
 /**
  * Attach all event listeners to buttons
@@ -4100,6 +4159,12 @@ function createActivityChart() {
     }
 }
 
+// Truncate a long axis label with an ellipsis; the full text is shown in the tooltip.
+function truncateLabel(label, max = 24) {
+    if (typeof label !== 'string' || label.length <= max) return label;
+    return label.slice(0, max - 1).trimEnd() + '…';
+}
+
 // Create school activity chart (top 10 schools by module count)
 async function createSchoolActivityChart(selectedColleges = []) {
     try {
@@ -4179,6 +4244,10 @@ async function createSchoolActivityChart(selectedColleges = []) {
                     },
                     tooltip: {
                         callbacks: {
+                            // Show the full (untruncated) school name as the tooltip title
+                            title: function(items) {
+                                return labels[items[0].dataIndex];
+                            },
                             label: function(context) {
                                 return `${context.parsed.x} modules`;
                             }
@@ -4200,6 +4269,10 @@ async function createSchoolActivityChart(selectedColleges = []) {
                             autoSkip: false, // Show all labels
                             font: {
                                 size: 11 // Slightly smaller for better fit
+                            },
+                            // Truncate long school names; full name appears in the tooltip
+                            callback: function(value) {
+                                return truncateLabel(this.getLabelForValue(value));
                             }
                         },
                         grid: {
@@ -4844,14 +4917,26 @@ async function createSchoolUsageChart() {
                 maintainAspectRatio: false,
                 indexAxis: 'y',
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            // Show the full (untruncated) school name as the tooltip title
+                            title: function(items) {
+                                return labels[items[0].dataIndex];
+                            }
+                        }
+                    }
                 },
                 scales: {
                     y: {
                         ticks: {
                             autoSkip: false,
                             font: { size: 11 },
-                            color: '#666'
+                            color: '#666',
+                            // Truncate long school names; full name appears in the tooltip
+                            callback: function(value) {
+                                return truncateLabel(this.getLabelForValue(value));
+                            }
                         }
                     },
                     x: {
@@ -5089,8 +5174,9 @@ window.switchAnalyticsTab = async function(tabName) {
     }
 };
 
-// Refresh charts
-window.refreshCharts = function() {
+// Refresh charts. Pass showToast=false for silent re-renders (theme toggle,
+// page load); only an explicit user-triggered refresh should show the toast.
+window.refreshCharts = function(showToast = true) {
     // Reset loaded tabs state
     loadedTabs.overview = false;
     loadedTabs.modules = false;
@@ -5099,7 +5185,9 @@ window.refreshCharts = function() {
 
     // Reinitialize charts
     initializeCharts();
-    showNotification('Charts refreshed!', 'success');
+    if (showToast) {
+        showNotification('Charts refreshed!', 'success');
+    }
 };
 
 // Toggle charts visibility (placeholder for expand feature)
@@ -7698,7 +7786,7 @@ function getProgrammeCardContent(prog, isExpanded) {
             </div>
 
             <!-- Title -->
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700 line-clamp-2" title="${prog.title}">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700 line-clamp-2 min-h-[3.5rem]" title="${prog.title}">
                 ${prog.title}
             </h3>
 
@@ -7825,7 +7913,7 @@ function getModuleCardContent(mod, isExpanded) {
             </div>
 
             <!-- Title -->
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700 line-clamp-2" title="${mod.title}">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 pb-3 border-b border-gray-100 dark:border-gray-700 line-clamp-2 min-h-[3.5rem]" title="${mod.title}">
                 ${mod.title}
             </h3>
 
@@ -9842,45 +9930,25 @@ window.startFeatureTour = function() {
     const driverObj = driverConstructor({
         showProgress: true,
         showButtons: ['next', 'previous', 'close'],
+        // Hide the "Previous" button on the first step (nothing to go back to).
+        onPopoverRender: (popover, opts) => {
+            const index = opts?.state?.activeIndex ?? 0;
+            if (popover.previousButton) {
+                popover.previousButton.style.display = index === 0 ? 'none' : '';
+            }
+        },
         steps: [
             {
                 popover: {
                     title: 'Welcome to the Tour! 👋',
-                    description: 'Let\'s explore the key features of the Specification Generator. This tour will guide you through the main sections of the application.',
-                }
-            },
-            {
-                element: '#helpButton',
-                popover: {
-                    title: 'Help & What\'s New',
-                    description: 'Click here anytime to see the changelog and learn about new features. You can also restart this tour from there!',
-                    side: 'left',
-                    align: 'start'
-                }
-            },
-            {
-                element: '#darkModeToggle',
-                popover: {
-                    title: 'Dark Mode',
-                    description: 'Toggle between light and dark themes. Your preference is saved automatically.',
-                    side: 'left',
-                    align: 'start'
-                }
-            },
-            {
-                element: 'nav.flex.-mb-px > button:nth-child(1)',
-                popover: {
-                    title: 'Generate Programmes Tab',
-                    description: 'Click this tab to search for and generate individual programme specifications.',
-                    side: 'bottom',
-                    align: 'start'
+                    description: 'A quick tour of the key features. Use Next to step through, or press Esc / the ✕ to exit at any time.',
                 }
             },
             {
                 element: '#prog-search',
                 popover: {
-                    title: 'Programme Search',
-                    description: 'Search for programmes by code or title. Start typing to see intelligent suggestions with fuzzy matching.',
+                    title: 'Generate Programme Specs',
+                    description: 'On the Programmes tab, search by programme code or title to generate an individual specification. Start typing to see smart suggestions.',
                     side: 'bottom',
                     align: 'start'
                 },
@@ -9889,19 +9957,10 @@ window.startFeatureTour = function() {
                 }
             },
             {
-                element: 'nav.flex.-mb-px > button:nth-child(2)',
-                popover: {
-                    title: 'Generate Modules Tab',
-                    description: 'Click this tab to search for and generate individual module specifications.',
-                    side: 'bottom',
-                    align: 'start'
-                }
-            },
-            {
                 element: '#mod-search',
                 popover: {
-                    title: 'Module Search',
-                    description: 'Search for modules by code or title. Each search is lightning-fast and remembers your recent searches.',
+                    title: 'Generate Module Specs',
+                    description: 'The Modules tab works the same way — search by module code or title. Some fields (like semester and module lead) can be edited before generating.',
                     side: 'bottom',
                     align: 'start'
                 },
@@ -9910,260 +9969,12 @@ window.startFeatureTour = function() {
                 }
             },
             {
-                popover: {
-                    title: 'Module Details Display',
-                    description: 'After searching for a module, its details appear with several editable fields. Let me show you the most important ones...',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        switchToTabForTour('modules');
-                        // Show demo module details
-                        showModuleDetailsForTour();
-                        // Wait a bit for DOM to update
-                        setTimeout(() => {
-                            // Ensure fields are visible
-                            const moduleDetails = document.getElementById('tour-module-details');
-                            if (moduleDetails) {
-                                moduleDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            }
-                        }, 300);
-                    }, 100);
-                }
-            },
-            {
-                element: '#edit-semester',
-                popover: {
-                    title: 'Editable Semester Field 📝',
-                    description: 'When generating a module specification, you can edit certain fields like the semester. This dropdown lets you override the default semester value. Submitting changes will send an email to CMT, and updates will be processed in Banner within 24 hours.',
-                    side: 'right',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        switchToTabForTour('modules');
-                        // Ensure the element is visible by scrolling to it
-                        const semesterField = document.getElementById('edit-semester');
-                        if (semesterField) {
-                            semesterField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 100);
-                }
-            },
-            {
-                element: '#edit-module-lead',
-                popover: {
-                    title: 'Module Lead Field',
-                    description: 'You can also edit the module lead name. Simply type in this field to customize who is listed as the module lead. Submitting changes will send an email to CMT, and updates will be processed in Banner within 24 hours.',
-                    side: 'right',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        switchToTabForTour('modules');
-                        // Ensure the element is visible
-                        const leadField = document.getElementById('edit-module-lead');
-                        if (leadField) {
-                            leadField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 100);
-                }
-            },
-            {
                 element: 'nav.flex.-mb-px > button:nth-child(4)',
                 popover: {
-                    title: 'Programme & Module Catalogue 📚',
-                    description: 'Click this tab to browse all available programmes and modules with powerful filtering options. Let\'s explore!',
+                    title: 'Browse the Catalogue 📚',
+                    description: 'Browse all programmes and modules, filter by year, school, college and more, and expand any card for full details. You can also multi-select cards to bulk-download specs as a ZIP.',
                     side: 'bottom',
                     align: 'start'
-                }
-            },
-            {
-                popover: {
-                    title: 'Browse & Filter Programmes',
-                    description: 'You can filter programmes by academic year, school, college, and qualification type. Each programme card can be expanded to see full details.',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => switchToTabForTour('catalogue'), 100);
-                }
-            },
-            {
-                popover: {
-                    title: 'Expanding Programme Cards',
-                    description: 'Let me show you what happens when you expand a programme card. Watch as the first card expands...',
-                },
-                onHighlightStarted: async () => {
-                    setTimeout(async () => {
-                        switchToTabForTour('catalogue');
-                        // Expand first programme card
-                        tourProgrammeCode = await expandFirstProgrammeCard();
-                    }, 100);
-                }
-            },
-            {
-                element: '#section-details',
-                popover: {
-                    title: 'Programme Details',
-                    description: 'Inside the expanded card, you can see all programme information: title, school, type, mode, duration, campus, and college.',
-                    side: 'left',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    // Give card time to expand, then scroll to details
-                    setTimeout(() => {
-                        switchToTabForTour('catalogue');
-                        scrollToSectionInCard('section-details');
-                    }, 500);
-                }
-            },
-            {
-                element: '#section-structure',
-                popover: {
-                    title: 'Programme Structure & Years',
-                    description: 'Below the details, you\'ll find the programme structure organized by year sections. Each year shows all modules including compulsory, optional, and qualifying requirements.',
-                    side: 'left',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    // Scroll to years section
-                    setTimeout(() => {
-                        scrollToSectionInCard('section-structure');
-                    }, 300);
-                }
-            },
-            {
-                element: '#select-modules-btn',
-                popover: {
-                    title: 'Select Modules Button 🎯',
-                    description: 'Click this button to enable module selection mode, which adds checkboxes next to every module in the year sections below. You can then select up to 25 modules to download at once!',
-                    side: 'left',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    // Scroll to the button to make it visible
-                    setTimeout(() => {
-                        const button = document.getElementById('select-modules-btn');
-                        if (button) {
-                            button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 300);
-                }
-            },
-            {
-                popover: {
-                    title: 'Module Selection Mode Enabled',
-                    description: 'Now I\'ll enable module selection mode. Watch for the checkboxes to appear next to each module...',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        if (tourProgrammeCode) {
-                            enableModuleSelectionForTour(tourProgrammeCode);
-                        }
-                    }, 100);
-                }
-            },
-            {
-                popover: {
-                    title: 'Select Modules',
-                    description: 'Click the checkboxes next to modules you want to download. You can select up to 25 modules from any year section in the programme.',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        switchToTabForTour('catalogue');
-                        // Scroll to years to show checkboxes
-                        scrollToSectionInCard('section-structure');
-
-                        // Expand Year 1 section to show the modules with checkboxes
-                        setTimeout(() => {
-                            const year1Button = document.querySelector('button[onclick*="toggleSection(\'year1\'"]');
-                            const year1Content = document.getElementById('year1-content');
-                            const year1Icon = document.getElementById('year1-icon');
-
-                            if (year1Button && year1Content && year1Content.classList.contains('hidden')) {
-                                // Expand Year 1
-                                year1Content.classList.remove('hidden');
-                                if (year1Icon) {
-                                    year1Icon.classList.add('rotate-90');
-                                }
-                            }
-                        }, 500);
-                    }, 700);
-                }
-            },
-            {
-                popover: {
-                    title: 'Download Selected Modules 📦',
-                    description: 'Once you\'ve selected modules, use the floating bar at the bottom of the screen to download them as a ZIP. They\'ll be organized in year folders (Year0/, Year1/, Year2/, etc.).',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        scrollToSectionInCard('section-details');
-                    }, 100);
-                }
-            },
-            {
-                popover: {
-                    title: 'Another Way to Bulk Download 🔄',
-                    description: 'There\'s also a separate multi-selection feature! You can select multiple programmes OR modules directly from the catalogue grid. Let me show you...',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(async () => {
-                        // Clean up module selection first
-                        if (catalogueState.moduleSelectionMode) {
-                            window.clearModuleSelection?.();
-                        }
-                        // Collapse the expanded card properly
-                        if (catalogueState.expandedCardId) {
-                            const cardId = catalogueState.expandedCardId;
-                            const card = document.getElementById(cardId);
-
-                            if (card) {
-                                // Remove expanded class
-                                card.classList.remove('catalogue-card-expanded');
-
-                                // Remove expanded content
-                                const contentDiv = card.querySelector('.catalogue-card-expanded-content');
-                                if (contentDiv) {
-                                    contentDiv.remove();
-                                }
-                            }
-
-                            // Clear state
-                            catalogueState.expandedCardId = null;
-                            tourProgrammeCode = null;
-                        }
-                    }, 100);
-                }
-            },
-            {
-                element: '#toggle-selection-mode',
-                popover: {
-                    title: 'Catalogue Multi-Selection',
-                    description: 'Click this "Select Multiple" button to enable multi-selection mode on the catalogue grid.',
-                    side: 'bottom',
-                    align: 'start'
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => switchToTabForTour('catalogue'), 500);
-                }
-            },
-            {
-                popover: {
-                    title: 'Grid Selection Mode',
-                    description: 'Watch as checkboxes appear on each programme/module card in the grid. You can select up to 25 items at once!',
-                },
-                onHighlightStarted: () => {
-                    setTimeout(() => {
-                        // Enable catalogue selection mode
-                        if (!catalogueState.selectionMode && window.toggleSelectionMode) {
-                            window.toggleSelectionMode();
-                        }
-                    }, 100);
-                }
-            },
-            {
-                popover: {
-                    title: 'Bulk Generate from Grid 🚀',
-                    description: 'Select multiple items by clicking their checkboxes, then click "Generate Bulk Documents (ZIP)" to download them all at once. This is perfect for generating multiple programme or module specs in one go!',
                 },
                 onHighlightStarted: () => {
                     setTimeout(() => switchToTabForTour('catalogue'), 100);
@@ -10173,28 +9984,36 @@ window.startFeatureTour = function() {
                 element: 'nav.flex.-mb-px > button:nth-child(3)',
                 popover: {
                     title: 'Usage Analytics 📊',
-                    description: 'Click this tab to track your document generation activity and see usage statistics.',
+                    description: 'Track generation activity and see usage by college, school and over time. Filter by year, college or date range.',
                     side: 'bottom',
                     align: 'start'
-                },
-                onHighlightStarted: async () => {
-                    // Cleanup catalogue state before moving on
-                    await cleanupTourState();
-                }
-            },
-            {
-                popover: {
-                    title: 'Analytics Dashboard',
-                    description: 'View charts showing monthly trends, college usage, school statistics, and recent activity. Filter by year, college, or date range to analyze your usage patterns.',
                 },
                 onHighlightStarted: () => {
                     setTimeout(() => switchToTabForTour('analytics'), 100);
                 }
             },
             {
+                element: '#darkModeToggle',
                 popover: {
-                    title: 'Tour Complete! 🎉',
-                    description: 'You\'re all set! Start generating specifications, explore the catalogue, or check out the analytics. Happy generating!',
+                    title: 'Dark Mode',
+                    description: 'Toggle between light and dark themes — your preference is saved automatically.',
+                    side: 'left',
+                    align: 'start'
+                }
+            },
+            {
+                element: '#helpButton',
+                popover: {
+                    title: 'Help & What\'s New',
+                    description: 'Open this anytime for the changelog, and to restart this tour.',
+                    side: 'left',
+                    align: 'start'
+                }
+            },
+            {
+                popover: {
+                    title: 'You\'re all set! 🎉',
+                    description: 'Start generating specifications, explore the catalogue, or check the analytics. Happy generating!',
                 }
             }
         ],
